@@ -1,0 +1,5 @@
+Debug/*
+Debug
+*.vcproj
+*.vcproj*
+*.swp
