@@ -11,7 +11,8 @@ using namespace std;
 
 Intersection::Intersection(QObject* parent)
     : QObject(parent)
-{}
+{
+}
 
 Intersection::~Intersection()
 {}
@@ -199,5 +200,75 @@ int Intersection::forward(double* p , /* photo data */
     }
 
     return 0;
+}
+
+bool Intersection::photoData()
+{
+    int np = 0; // number of matched points
+    PhotoPoints* tpht = m_prj->photoPoints(m_prj->curPhotoPoints());
+    ControlPoints* tctl = m_prj->controlPoints(m_prj->curControlPoints());
+   // tpht = m_pht[m_curPhotoPoints];
+   // tctl = m_ctl[m_curControlPoints];
+    map<int, Point> *ctl = &tctl->m_points;
+    map<int, vector<Point> > *pht = &tpht->m_points;
+    map<int, Point>::iterator itc;
+    map<int, vector<Point> >::iterator itp;
+    int n = min(ctl->size(), pht->size());
+    int* keys = new int[n];
+    for (itc = ctl->begin(), itp = pht->begin();
+         (itc != ctl->end()) && (itp != pht->end()); 
+         )
+    {
+        if (itc->first == itp->first)
+        {
+            keys[np] = itc->first;
+            ++np;
+            ++itc; 
+            ++itp;
+        }
+        else if (itc->first < itp->first)
+            ++itc;
+        else
+            ++itp;
+    }
+    double* phtdata = new double[2*np];
+    double* ctldata = new double[3*np];
+    double scalex;
+    double scaley;
+    scalex = tpht->m_fiducial[2] / tpht->m_fiducial[0];
+    scaley = tpht->m_fiducial[3] / tpht->m_fiducial[1];
+    for (int i = 0; i < np; ++i)
+    {
+        ctldata[i*3] = (*ctl)[keys[i]].y * 1e3; // x and y should be reverted
+        ctldata[i*3+1] = (*ctl)[keys[i]].x * 1e3;
+        ctldata[i*3+2] = (*ctl)[keys[i]].z * 1e3;
+
+        switch (p)
+        {
+        case 0:   // the left photo
+            phtdata[i*2] = (*pht)[keys[i]][0].x - 100;
+            phtdata[i*2+1] = 100 - (*pht)[keys[i]][0].y;
+            break;
+        case 1:   // the right photo
+            phtdata[i*2] = (*pht)[keys[i]][0].x - 100 - (*pht)[keys[i]][1].x;
+            phtdata[i*2+1] = 100 - (*pht)[keys[i]][0].y + 10 - (*pht)[keys[i]][1].y;
+            break;
+        default:
+            break;
+        }
+        phtdata[i*2] *= scalex;
+        phtdata[i*2+1] *= scaley;
+    }
+    *focus = -(*pht)[keys[0]][0].z;
+    *ppht = phtdata;
+    *pctl = ctldata;
+
+    return true;
+
+}
+
+bool Intersection::controlData()
+{
+    return true;
 }
 

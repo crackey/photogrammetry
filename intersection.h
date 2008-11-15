@@ -34,14 +34,16 @@ private:
     bool orientNotExact(double* orient);
     int backward(double* pht, double* ctl, double* orient, double f, int n);
     int forward(double* p , double* o, double* out, int n);
+    bool photoData();
+    bool controlData();
 
     double m_lo[6]; // orient elements of left photo
     double m_ro[6]; // orient elements of right photo
     double* m_ctld; // control points data
     double* m_lphotod;
     double* m_rphotod;
-    PhotoPoints* m_pht;
-    ControlPoints* m_ctl;
+    QString m_pht;
+    QString m_ctl;
 };
 
 #endif
