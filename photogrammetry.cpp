@@ -13,7 +13,7 @@
 #include "projectmodel.h"
 #include "photopointsmodel.h"
 #include "controlpointsmodel.h"
-#include "intersection.h"
+//#include "intersection.h"
 
 using namespace std;
 
@@ -319,3 +319,12 @@ void Photogrammetry::forwardIntersection()
     delete []phtdata;
 }
 #endif 
+
+void Photogrammetry::forwardIntersection()
+{
+//    m_prj->addIntersection(m_prj->curControlPoints(), m_prj->curPhotoPoints());
+}
+
+void Photogrammetry::backwardIntersection()
+{}
+

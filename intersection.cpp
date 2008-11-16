@@ -1,6 +1,10 @@
 #include "cmath"
 
 #include "intersection.h"
+#include "phgproject.h"
+#include "photopoints.h"
+#include "controlpoints.h"
+#include "globaldefn.h"
 #include "lls.h"
 
 using namespace std;
@@ -20,17 +24,14 @@ Intersection::~Intersection()
 
 void Intersection::setControl(double* pd)
 {
-    m_ctl = pd;
 }
 
 void Intersection::setLeftPhoto(double* pd)
 {
-    m_lp = pd;
 }
 
 void Intersection::setRightPhoto(double* pd)
 {
-    m_rp = pd;
 }
 
 double Intersection::a1(double* orient)
@@ -205,9 +206,11 @@ int Intersection::forward(double* p , /* photo data */
 
 bool Intersection::photoData()
 {
+    double **ppht, **pctl, *focus;
     int np = 0; // number of matched points
-    PhotoPoints* tpht = m_prj->photoPoints(m_prj->curPhotoPoints());
-    ControlPoints* tctl = m_prj->controlPoints(m_prj->curControlPoints());
+    PHGProject* prj = (PHGProject*)parent();
+    PhotoPoints* tpht = prj->photoPoints(prj->curPhotoPoints());
+    ControlPoints* tctl = prj->controlPoints(prj->curControlPoints());
    // tpht = m_pht[m_curPhotoPoints];
    // tctl = m_ctl[m_curControlPoints];
     map<int, Point> *ctl = &tctl->m_points;
@@ -243,7 +246,8 @@ bool Intersection::photoData()
         ctldata[i*3] = (*ctl)[keys[i]].y * 1e3; // x and y should be reverted
         ctldata[i*3+1] = (*ctl)[keys[i]].x * 1e3;
         ctldata[i*3+2] = (*ctl)[keys[i]].z * 1e3;
-
+    
+        int p = 0;
         switch (p)
         {
         case 0:   // the left photo

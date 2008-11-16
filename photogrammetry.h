@@ -37,9 +37,9 @@ signals:
     void backwardFinished();
 
 private:
-#if 0
     void backwardIntersection();
     void forwardIntersection();
+#if 0
     int backwardData(double** ppht, double** pctl, double* focus, int p);
 #endif
 

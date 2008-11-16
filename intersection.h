@@ -13,8 +13,8 @@ public:
     Intersection(QObject* parent = 0);
     ~Intersection();
 
-    int backward(double* pht, double* ctl, double* result, double f, int n);
-    int forward(double* p, double* o, double* out, int n);
+//    int backward(double* pht, double* ctl, double* result, double f, int n);
+//    int forward(double* p, double* o, double* out, int n);
     void setControl(double* pd);
     void setLeftPhoto(double* pd);
     void setRightPhoto(double* pd);

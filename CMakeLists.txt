@@ -29,6 +29,7 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_CURRENT_SOURCE_DIR} 
     ${CMAKE_CURRENT_BINARY_DIR}
     "d:/dev/include"
+    "~/dev/"
    )
 INCLUDE(
     ${QT_USE_FILE}
@@ -72,9 +73,11 @@ ADD_EXECUTABLE(photogrammetry
               )
 
 SET(LIBRARYS
-    blas_win32.lib
-    blas_win32.dll
-    lapack_win32.lib
-    lapack_win32.dll
+    blas
+    lapack
+    #blas_win32.lib
+    #blas_win32.dll
+    #lapack_win32.lib
+    #lapack_win32.dll
     )
 TARGET_LINK_LIBRARIES(photogrammetry ${QT_LIBRARIES} ${LIBRARYS})

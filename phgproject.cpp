@@ -135,3 +135,6 @@ void PHGProject::setProjectStatus(QString filepath)
     }
 }
 
+void PHGProject::addIntersection(QString key)
+{}
+
