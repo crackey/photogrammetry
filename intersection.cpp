@@ -12,6 +12,7 @@ using namespace std;
 Intersection::Intersection(QObject* parent)
     : QObject(parent)
 {
+
 }
 
 Intersection::~Intersection()

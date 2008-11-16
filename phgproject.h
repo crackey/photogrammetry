@@ -7,6 +7,7 @@
 class QString;
 class PhotoPoints;
 class ControlPoints;
+class Intersection;
 
 using namespace std;
 
@@ -19,6 +20,7 @@ public:
     
     PhotoPoints* photoPoints(QString key);
     ControlPoints* controlPoints(QString key);
+    Intersection* intersection(QString key);
     QString curPhotoPoints();
     QString curControlPoints();
 
@@ -28,6 +30,7 @@ public slots:
     void setCurControlPoints(QString filepath);
     void setProjectStatus(QString filepath);
     void setFiducial(QString key, double* fid);
+    void addIntersection(QString key);
     
 signals:
     void fileLoaded(QString filepath);
@@ -38,6 +41,7 @@ signals:
 private:
     map<QString, PhotoPoints*> m_pht;
     map<QString, ControlPoints*> m_ctl;
+    map<QString, Intersection*> m_intersection;
     QString m_curPhotoPoints;
     QString m_curControlPoints;
 };

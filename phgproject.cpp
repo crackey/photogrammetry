@@ -5,6 +5,7 @@
 #include "phgproject.h"
 #include "photopoints.h"
 #include "controlpoints.h"
+#include "intersection.h"
 
 using namespace std;
 
@@ -81,6 +82,11 @@ PhotoPoints* PHGProject::photoPoints(QString key)
 ControlPoints* PHGProject::controlPoints(QString key)
 {
     return m_ctl.find(key)->second;
+}
+
+Intersection* PHGProject::intersection(QString key)
+{
+    return m_intersection.find(key)->second;
 }
 
 QString PHGProject::curPhotoPoints()

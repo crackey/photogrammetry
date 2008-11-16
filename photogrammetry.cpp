@@ -137,6 +137,8 @@ void Photogrammetry::syncFiducial(QString key)
 
 // end of public slots
 
+#if 0
+
 void Photogrammetry::backwardIntersection()
 {
     // get the left photo
@@ -316,3 +318,4 @@ void Photogrammetry::forwardIntersection()
     delete []out;
     delete []phtdata;
 }
+#endif 

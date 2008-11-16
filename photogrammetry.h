@@ -37,9 +37,11 @@ signals:
     void backwardFinished();
 
 private:
+#if 0
     void backwardIntersection();
     void forwardIntersection();
     int backwardData(double** ppht, double** pctl, double* focus, int p);
+#endif
 
     Ui::PhotogrammetryBase ui;
     PHGProject *m_prj;
