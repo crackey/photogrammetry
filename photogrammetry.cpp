@@ -54,10 +54,13 @@ Photogrammetry::Photogrammetry()
     connect(this, SIGNAL(fileopen(QString)), m_prj, SLOT(openfile(QString)));
     connect(m_prj, SIGNAL(fileLoaded(QString)), model, SLOT(addItem(QString)));
     connect(m_prj, SIGNAL(fileLoaded(QString)), this, SLOT(addView(QString)));
-    connect(m_prj, SIGNAL(backwardAvailable(bool)), this, SIGNAL(backwardAvailable(bool)));
-    connect(this, SIGNAL(backwardAvailable(bool)), ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
-    connect(this, SIGNAL(forwardAvailable(bool)), ui.intersectionForwardAction, SLOT(setEnabled(bool)));
+    connect(m_prj, SIGNAL(backwardAvailable(bool)), 
+            ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
+    connect(m_prj, SIGNAL(forwardAvailable(bool)), 
+            ui.intersectionForwardAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(phtAvailable(QString)), this, SLOT(syncFiducial(QString)));
+//    connect(this, SIGNAL(backwardAvailable(bool)), ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
+//    connect(this, SIGNAL(forwardAvailable(bool)), ui.intersectionForwardAction, SLOT(setEnabled(bool)));
 }
 
 Photogrammetry::~Photogrammetry()
@@ -96,12 +99,12 @@ void Photogrammetry::on_orientationAbsoluteAction_triggered()
 
 void Photogrammetry::on_intersectionForwardAction_triggered()
 {
-    forwardIntersection();
+    m_prj->forwardIntersection();
 }
 
 void Photogrammetry::on_intersectionBackwardAction_triggered()
 {
-    backwardIntersection();
+    m_prj->backwardIntersection();
 }
 
 void Photogrammetry::on_helpAboutAction_triggered()
@@ -320,11 +323,12 @@ void Photogrammetry::forwardIntersection()
 }
 #endif 
 
+#if 0
 void Photogrammetry::forwardIntersection()
 {
-//    m_prj->addIntersection(m_prj->curControlPoints(), m_prj->curPhotoPoints());
+    m_prj->addIntersection(m_prj->curControlPoints(), m_prj->curPhotoPoints());
 }
 
 void Photogrammetry::backwardIntersection()
 {}
-
+#endif

@@ -15,6 +15,7 @@ PHGProject::PHGProject(QObject* parent)
     connect(this, SIGNAL(fileLoaded(QString)), this, SLOT(setCurPhotoPoints(QString)));
     connect(this, SIGNAL(fileLoaded(QString)), this, SLOT(setCurControlPoints(QString)));
     connect(this, SIGNAL(fileLoaded(QString)), this, SLOT(setProjectStatus(QString)));
+    connect(this, SIGNAL(backwardFinished(bool)), this, SIGNAL(forwardAvailable(bool)));
 }
 
 PHGProject::~PHGProject()
@@ -137,4 +138,55 @@ void PHGProject::setProjectStatus(QString filepath)
 
 void PHGProject::addIntersection(QString key)
 {}
+
+void PHGProject::forwardIntersection()
+{
+    QString key = m_curControlPoints + m_curPhotoPoints;
+    Intersection* ints = 0;
+    map<QString, Intersection*>::iterator it;
+    for (it = m_intersection.begin(); it != m_intersection.end(); ++it)
+    {
+        if (it->first == key)
+        {
+            ints = it->second;
+            break;
+        }
+    }
+    if (ints != 0)
+    {
+        if (ints->forward())
+        {
+            emit forwardFinished(true);
+        }
+    }
+    else
+    {
+        emit forwardFinished(false);
+    }
+}
+
+void PHGProject::backwardIntersection()
+{
+    QString key = m_curControlPoints + m_curPhotoPoints;
+    map<QString, Intersection*>::iterator it;
+    for (it = m_intersection.begin(); it != m_intersection.end(); ++it)
+    {
+        if (it->first == key)
+            break;
+    }
+    if (it == m_intersection.end())
+    {
+        Intersection* ints = new Intersection(m_curControlPoints, m_curPhotoPoints, this);
+        if (ints->backward())
+        {
+            m_intersection.insert(make_pair(key, ints));
+            emit backwardFinished(true);
+        }
+        else
+        {
+            emit backwardFinished(false);
+        }
+    }
+
+}
 

@@ -335,6 +335,13 @@
              </widget>
             </item>
            </layout>
+           <zorder>label_3</zorder>
+           <zorder>label_4</zorder>
+           <zorder>label_5</zorder>
+           <zorder>label_6</zorder>
+           <zorder>label_8</zorder>
+           <zorder>label_7</zorder>
+           <zorder>lorientTableWidget</zorder>
           </widget>
          </item>
         </layout>
@@ -343,9 +350,6 @@
      </widget>
     </item>
    </layout>
-   <zorder>projectView</zorder>
-   <zorder>tabWidget</zorder>
-   <zorder>splitter_3</zorder>
   </widget>
   <widget class="QMenuBar" name="menubar" >
    <property name="geometry" >
@@ -353,7 +357,7 @@
      <x>0</x>
      <y>0</y>
      <width>801</width>
-     <height>20</height>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu" >

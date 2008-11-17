@@ -31,12 +31,17 @@ public slots:
     void setProjectStatus(QString filepath);
     void setFiducial(QString key, double* fid);
     void addIntersection(QString key);
+    void forwardIntersection();
+    void backwardIntersection();
     
 signals:
     void fileLoaded(QString filepath);
     void phtAvailable(QString filepath);
     void backwardAvailable(bool);
+    void forwardAvailable(bool);
     void ctlAvailable(QString filepath);
+    void backwardFinished(bool);
+    void forwardFinished(bool);
 
 private:
     map<QString, PhotoPoints*> m_pht;
