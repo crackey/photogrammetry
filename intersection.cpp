@@ -383,3 +383,8 @@ bool Intersection::controlData()
 {
     return true;
 }
+
+double const* Intersection::orient() const
+{
+    return m_orient;
+}

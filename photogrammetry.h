@@ -28,6 +28,7 @@ public slots:
 
     // my slots:
     void addView(QString filepath);
+    void updateBackwardView(bool t);
     void syncFiducial(QString key);
 
 signals:

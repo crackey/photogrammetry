@@ -14,11 +14,13 @@ set(QTMOC_SRCS
     controlpointsmodel.h
     photopoints.h
     intersection.h
+    intersectionwidget.h
     )
 QT4_WRAP_CPP(QT_MOC_SRCS ${QTMOC_SRCS})
 
 set(QTUIC_SRCS 
     ui/photogrammetrybase.ui
+    ui/intersectionwidgetbase.ui
     )
 QT4_WRAP_UI(QT_UIC_HEADERS ${QTUIC_SRCS})
 
@@ -47,6 +49,7 @@ SET(_HEADERS
     controlpointsmodel.h
     lls.h
     intersection.h
+    intersectionwidget.h
     )
 SET(_SRCS
     main.cpp
@@ -59,6 +62,7 @@ SET(_SRCS
     controlpointsmodel.cpp
     lls.cpp
     intersection.cpp
+    intersectionwidget.cpp
     )
 SET(SRCS
     ${_HEADERS}
@@ -72,8 +76,7 @@ ADD_EXECUTABLE(photogrammetry
     ${SRCS}
     )
 
-
-
+# lapack libraries
 IF(WIN32)
     SET(LIBRARYS blas_win32 lapack_win32)
 ELSE(WIN32)

@@ -2,9 +2,7 @@
 #include <map>
 #include <string>
 #include <sstream>
-#include <QFileDialog>
-#include <QStandardItemModel>
-#include <QObject>
+#include <QtGui>
 
 #include "globaldefn.h"
 #include "controlpoints.h"
@@ -13,6 +11,7 @@
 #include "projectmodel.h"
 #include "photopointsmodel.h"
 #include "controlpointsmodel.h"
+#include "intersectionwidget.h"
 //#include "intersection.h"
 
 using namespace std;
@@ -59,6 +58,7 @@ Photogrammetry::Photogrammetry()
     connect(m_prj, SIGNAL(forwardAvailable(bool)), 
             ui.intersectionForwardAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(phtAvailable(QString)), this, SLOT(syncFiducial(QString)));
+    connect(m_prj, SIGNAL(backwardFinished(bool)), this, SLOT(updateBackwardView(bool)));
 //    connect(this, SIGNAL(backwardAvailable(bool)), ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
 //    connect(this, SIGNAL(forwardAvailable(bool)), ui.intersectionForwardAction, SLOT(setEnabled(bool)));
 }
@@ -136,6 +136,16 @@ void Photogrammetry::syncFiducial(QString key)
     connect(ui.tfySpinBox, SIGNAL(valueChanged(double)), pht, SLOT(setTfy(double)));
     connect(ui.rfxSpinBox, SIGNAL(valueChanged(double)), pht, SLOT(setRfx(double)));
     connect(ui.rfySpinBox, SIGNAL(valueChanged(double)), pht, SLOT(setRfy(double)));
+}
+
+void Photogrammetry::updateBackwardView(bool t)
+{
+    if (t)
+    {
+        QTabWidget* tab = ui.tabWidget;
+        IntersectionWidget* intsWidget = new IntersectionWidget(m_prj->intersection(m_prj->curIntersection()));
+        tab->addTab(intsWidget, "intersection");
+    }
 }
 
 // end of public slots

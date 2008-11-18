@@ -23,6 +23,7 @@ public:
     Intersection* intersection(QString key);
     QString curPhotoPoints();
     QString curControlPoints();
+    QString curIntersection();
 
 public slots:
     void openfile(QString filepath);
@@ -47,6 +48,7 @@ private:
     map<QString, PhotoPoints*> m_pht;
     map<QString, ControlPoints*> m_ctl;
     map<QString, Intersection*> m_intersection;
+    QString m_curIntersection;
     QString m_curPhotoPoints;
     QString m_curControlPoints;
 };

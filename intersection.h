@@ -20,6 +20,8 @@ public:
     void setRightPhoto(double* pd);
     bool forward();
     bool backward();
+        double const* orient() const;
+
 
 private:
     double a1(double* orient);

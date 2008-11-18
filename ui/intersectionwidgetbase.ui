@@ -1,0 +1,104 @@
+<ui version="4.0" >
+ <class>IntersectionWidgetBase</class>
+ <widget class="QWidget" name="IntersectionWidgetBase" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>516</width>
+    <height>460</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout" >
+   <item>
+    <widget class="QTableWidget" name="orientTable" >
+     <property name="gridStyle" >
+      <enum>Qt::SolidLine</enum>
+     </property>
+     <property name="rowCount" >
+      <number>6</number>
+     </property>
+     <property name="columnCount" >
+      <number>2</number>
+     </property>
+     <row>
+      <property name="text" >
+       <string>Xs</string>
+      </property>
+     </row>
+     <row>
+      <property name="text" >
+       <string>Ys</string>
+      </property>
+     </row>
+     <row>
+      <property name="text" >
+       <string>Zs</string>
+      </property>
+     </row>
+     <row>
+      <property name="text" >
+       <string>φ</string>
+      </property>
+     </row>
+     <row>
+      <property name="text" >
+       <string>ω</string>
+      </property>
+     </row>
+     <row>
+      <property name="text" >
+       <string>κ</string>
+      </property>
+     </row>
+     <column>
+      <property name="text" >
+       <string>左相片</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>右相片</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTableWidget" name="forwardTable" >
+     <property name="rowCount" >
+      <number>1</number>
+     </property>
+     <property name="columnCount" >
+      <number>4</number>
+     </property>
+     <row/>
+     <column>
+      <property name="text" >
+       <string>点号</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>X</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>Y</string>
+      </property>
+     </column>
+     <column>
+      <property name="text" >
+       <string>Z</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
