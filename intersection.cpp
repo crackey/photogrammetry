@@ -18,6 +18,8 @@ Intersection::Intersection(QString ctl, QString pht, QObject* parent)
 {
     m_ctl = ctl;
     m_pht = pht;
+    for (int i = 0; i < 12; ++i)
+        m_orient[i] = 0.0;
 }
 
 Intersection::~Intersection()
@@ -159,6 +161,7 @@ bool Intersection::forward()
     }
     delete []out;
     delete []phtdata;
+    return true;
 }
 
 bool Intersection::backward()
@@ -180,6 +183,7 @@ bool Intersection::backward()
     m_orient[1] /= lnumPoints;
     m_orient[2] = m_orient[2]/lnumPoints + 1e3*lfocus;
     m_orient[3] = m_orient[4] = m_orient[5] = 0.0;
+    int left = backward_impl(lphtdata, lctldata, m_orient, lfocus, lnumPoints);
     
 #if 1
     qDebug() << "Number of matched Points:" << lnumPoints;
@@ -206,8 +210,7 @@ bool Intersection::backward()
     m_orient[7] /= rnumPoints;
     m_orient[8] = m_orient[2]/rnumPoints + 1e3*rfocus;
     m_orient[9] = m_orient[10] = m_orient[11] = 0.0;
-    int left = backward_impl(rphtdata, rctldata, m_orient+6, rfocus, rnumPoints);
-    int right = backward_impl(lphtdata, lctldata, m_orient, lfocus, lnumPoints);
+    int right = backward_impl(rphtdata, rctldata, m_orient+6, rfocus, rnumPoints);
 
     qDebug() << "Orient elements:"; 
     for (int i = 0; i < 12; ++i)

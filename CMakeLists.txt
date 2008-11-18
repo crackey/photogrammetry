@@ -14,12 +14,12 @@ set(QTMOC_SRCS
     controlpointsmodel.h
     photopoints.h
     intersection.h
-   )
+    )
 QT4_WRAP_CPP(QT_MOC_SRCS ${QTMOC_SRCS})
 
 set(QTUIC_SRCS 
     ui/photogrammetrybase.ui
-   )
+    )
 QT4_WRAP_UI(QT_UIC_HEADERS ${QTUIC_SRCS})
 
 SET(QT_USE_QTSQL 1)
@@ -30,11 +30,11 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_CURRENT_BINARY_DIR}
     "d:/dev/include"
     "~/dev/"
-   )
+    )
 INCLUDE(
     ${QT_USE_FILE}
-   )
-  
+    )
+
 #AUX_SOURCE_DIRECTORY(. _SRCS)
 SET(_HEADERS
     controlpoints.h
@@ -47,7 +47,7 @@ SET(_HEADERS
     controlpointsmodel.h
     lls.h
     intersection.h
-   )
+    )
 SET(_SRCS
     main.cpp
     controlpoints.cpp
@@ -59,25 +59,25 @@ SET(_SRCS
     controlpointsmodel.cpp
     lls.cpp
     intersection.cpp
-   )
+    )
 SET(SRCS
     ${_HEADERS}
     ${_SRCS}
     ${QT_MOC_SRCS}
     ${QT_UIC_HEADERS}
-   )
+    )
 
 # use WIN32 cause /SUBSYSTEM:WINDOWS, or a console built
 ADD_EXECUTABLE(photogrammetry 
-               ${SRCS}
-              )
-
-SET(LIBRARYS
-    blas
-    lapack
-    #blas_win32.lib
-    #blas_win32.dll
-    #lapack_win32.lib
-    #lapack_win32.dll
+    ${SRCS}
     )
+
+
+
+IF(WIN32)
+    SET(LIBRARYS blas_win32.lib blas_win32.dll lapack_win32.lib lapack_win32.dll )
+ELSE(WIN32)
+    SET(LIBRARYS  blas  lapack  )
+ENDIF(WIN32)
+
 TARGET_LINK_LIBRARIES(photogrammetry ${QT_LIBRARIES} ${LIBRARYS})
