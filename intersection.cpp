@@ -18,10 +18,20 @@ Intersection::Intersection(QString ctl, QString pht, QObject* parent)
 {
     m_ctl = ctl;
     m_pht = pht;
+    m_forwardResult = 0;
+    m_numPhtPt = 0;
+    m_index = 0;
+    for (int i = 0; i < 12; ++i)
+        m_orient[i] = 0.0;
 }
 
 Intersection::~Intersection()
-{}
+{
+    if (m_forwardResult != 0)
+        delete m_forwardResult;
+    if (m_index != 0)
+        delete m_index;
+}
 
 void Intersection::setControl(double* pd)
 {
@@ -129,8 +139,10 @@ bool Intersection::forward()
     double scaley;
     scalex = tpht->m_fiducial[2] / tpht->m_fiducial[0];
     scaley = tpht->m_fiducial[3] / tpht->m_fiducial[1];
+    m_index = new int[np];
     for (int i = 0; it != pht->end(); ++it, ++i)
     {
+        m_index[i] = it->first;
         phtdata[i*6] = it->second[0].x - 100;
         phtdata[i*6+1] = 100 - it->second[0].y;
         phtdata[i*6+2] = it->second[0].z;
@@ -146,19 +158,28 @@ bool Intersection::forward()
             << phtdata[i*6+2] << phtdata[i*6+3]
             << phtdata[i*6+4] << phtdata[i*6+5];
     }
-    double* out = new double[3*np];
+    m_forwardResult = new double[3*np];
 
-    forward_impl(phtdata, m_orient, out, np);
+    int status = forward_impl(phtdata, m_orient, m_forwardResult, np);
     for (int i = 0; i < 12; ++i)
     {
         qDebug() << m_orient[i];
     }
     for (int i = 0; i < np; ++i)
     {
-        qDebug() << out[3*i]/1e3 << out[3*i+1]/1e3 << out[3*i+2]/1e3;
+        qDebug() << m_forwardResult[3*i]/1e3 << m_forwardResult[3*i+1]/1e3 << m_forwardResult[3*i+2]/1e3;
     }
-    delete []out;
     delete []phtdata;
+    if (status == 0)
+    {
+        m_numPhtPt = np;
+        return true;
+    }
+    m_numPhtPt = np;
+    if (m_forwardResult != 0)
+        delete []m_forwardResult;
+    m_numPhtPt = 0;
+    return false;
 }
 
 bool Intersection::backward()
@@ -180,6 +201,7 @@ bool Intersection::backward()
     m_orient[1] /= lnumPoints;
     m_orient[2] = m_orient[2]/lnumPoints + 1e3*lfocus;
     m_orient[3] = m_orient[4] = m_orient[5] = 0.0;
+    int left = backward_impl(lphtdata, lctldata, m_orient, lfocus, lnumPoints);
     
 #if 1
     qDebug() << "Number of matched Points:" << lnumPoints;
@@ -206,8 +228,7 @@ bool Intersection::backward()
     m_orient[7] /= rnumPoints;
     m_orient[8] = m_orient[2]/rnumPoints + 1e3*rfocus;
     m_orient[9] = m_orient[10] = m_orient[11] = 0.0;
-    int left = backward_impl(rphtdata, rctldata, m_orient+6, rfocus, rnumPoints);
-    int right = backward_impl(lphtdata, lctldata, m_orient, lfocus, lnumPoints);
+    int right = backward_impl(rphtdata, rctldata, m_orient+6, rfocus, rnumPoints);
 
     qDebug() << "Orient elements:"; 
     for (int i = 0; i < 12; ++i)
@@ -373,6 +394,7 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
     *ppht = phtdata;
     *pctl = ctldata;
 
+    delete []keys;
     return np;
 }
 
@@ -381,3 +403,14 @@ bool Intersection::controlData()
     return true;
 }
 
+int Intersection::forwardResult(int** index, double** result)
+{
+    *index = m_index;
+    *result = m_forwardResult;
+    return m_numPhtPt;
+}
+
+double const* Intersection::orient() const
+{
+    return m_orient;
+}

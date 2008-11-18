@@ -100,6 +100,11 @@ QString PHGProject::curControlPoints()
     return m_curControlPoints;
 }
 
+QString PHGProject::curIntersection()
+{
+    return m_curIntersection;
+}
+
 void PHGProject::setCurControlPoints(QString filepath)
 {
     if (filepath.endsWith(".ctl"))
@@ -180,6 +185,7 @@ void PHGProject::backwardIntersection()
         if (ints->backward())
         {
             m_intersection.insert(make_pair(key, ints));
+            m_curIntersection = key;
             emit backwardFinished(true);
         }
         else
