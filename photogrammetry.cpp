@@ -152,7 +152,7 @@ void Photogrammetry::updateBackwardView(bool t)
         }
         IntersectionWidget* intsWidget = new IntersectionWidget(m_prj->intersection(m_prj->curIntersection()));
         intsWidget->updateBackward();
-        tab->addTab(intsWidget, tr("intersection"));
+        tab->addTab(intsWidget,  tabLabel);
     }
 }
 
