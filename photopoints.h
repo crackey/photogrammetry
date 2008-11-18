@@ -21,6 +21,7 @@ public:
     ~PhotoPoints();
 
     size_t count() const;
+    double f() const;
                                                                   
 public slots:
     void setRfx(double val);
@@ -38,7 +39,7 @@ public:
     int m_pointNum;
     double m_focus;
     double m_fiducial[4];
-    map<int, vector<Point> > m_points;
+    map<int, PhotoPoint> m_points;
 };
 
 #endif

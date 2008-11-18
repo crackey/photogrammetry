@@ -13,8 +13,6 @@ public:
     Intersection(QString ctl, QString pht, QObject* parent = 0);
     ~Intersection();
 
-//    int backward(double* pht, double* ctl, double* result, double f, int n);
-//    int forward(double* p, double* o, double* out, int n);
     void setControl(double* pd);
     void setLeftPhoto(double* pd);
     void setRightPhoto(double* pd);
@@ -24,15 +22,6 @@ public:
     double const* orient() const;
 
 private:
-    double a1(double* orient);
-    double a2(double* orient);
-    double a3(double* orient);
-    double b1(double* orient);
-    double b2(double* orient);
-    double b3(double* orient);
-    double c1(double* orient);
-    double c2(double* orient);
-    double c3(double* orient);
     double z_(double* orient, double* ctl, int index);
     void ma(double* a, double* ctl, double* pht, double f, double* orient, int index);
     bool orientNotExact(double* orient);

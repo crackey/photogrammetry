@@ -5,6 +5,7 @@
 #include "photopoints.h"
 #include "controlpoints.h"
 #include "globaldefn.h"
+#include "transform.h"
 #include "lls.h"
 
 using namespace std;
@@ -45,51 +46,6 @@ void Intersection::setRightPhoto(double* pd)
 {
 }
 
-double Intersection::a1(double* orient)
-{
-    return cos(orient[3])*cos(orient[5]) - sin(orient[3])*sin(orient[4])*sin(orient[5]);
-}
-
-double Intersection::a2(double* orient)
-{
-    return -cos(orient[3])*sin(orient[5]) - sin(orient[3])*sin(orient[4])*cos(orient[5]);
-}
-
-double Intersection::a3(double* orient)
-{
-    return -sin(orient[3])*cos(orient[4]);
-}
-
-double Intersection::b1(double* orient)
-{
-    return cos(orient[4])*sin(orient[5]);
-}
-
-double Intersection::b2(double* orient)
-{
-    return cos(orient[4])*cos(orient[5]);
-}
-
-double Intersection::b3(double* orient)
-{
-    return -sin(orient[4]);
-}
-
-double Intersection::c1(double* orient)
-{
-    return sin(orient[3])*cos(orient[5]) + cos(orient[3])*sin(orient[4])*sin(orient[5]);
-}
-
-double Intersection::c2(double* orient)
-{
-    return -sin(orient[3])*sin(orient[5]) + cos(orient[3])*sin(orient[4])*cos(orient[5]);
-}
-
-double Intersection::c3(double* orient)
-{
-    return cos(orient[3])*cos(orient[4]);
-}
-
 double Intersection::z_(double* orient, double* ctl, int index)
 {
     return a3(orient)*(ctl[3*index] - orient[0])
@@ -128,11 +84,11 @@ bool Intersection::forward()
 {
     PHGProject* prj = (PHGProject*)parent();
     PhotoPoints* tpht = (prj->photoPoints(prj->curPhotoPoints()));
-    map<int, vector<Point> >* pht = &tpht->m_points;
+    map<int, PhotoPoint>* pht = &tpht->m_points;
     int np;
     np = pht->size();
     double* phtdata = new double[6*np];
-    map<int, vector<Point> >::iterator it;
+    map<int, PhotoPoint>::iterator it;
     it = pht->begin();
 
     double scalex;
@@ -143,12 +99,13 @@ bool Intersection::forward()
     for (int i = 0; it != pht->end(); ++it, ++i)
     {
         m_index[i] = it->first;
-        phtdata[i*6] = it->second[0].x - 100;
-        phtdata[i*6+1] = 100 - it->second[0].y;
-        phtdata[i*6+2] = it->second[0].z;
-        phtdata[i*6+3] = phtdata[i*6] - it->second[1].x;
-        phtdata[i*6+4] = phtdata[i*6+1] + 10 - it->second[1].y;
-        phtdata[i*6+5] = it->second[1].z;
+        phtdata[i*6] = it->second.x1 - 100;
+        phtdata[i*6+1] = 100 - it->second.y1;
+//        phtdata[i*6+2] = it->second[0].z;
+        phtdata[i*6+2] = tpht->f();
+        phtdata[i*6+3] = phtdata[i*6] - it->second.x2;
+        phtdata[i*6+4] = phtdata[i*6+1] + 10 - it->second.y2;
+        phtdata[i*6+5] = tpht->f();
 
         phtdata[i*6] *= scalex;
         phtdata[i*6+1] *= scaley;
@@ -342,14 +299,14 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
 {
     int np = 0; // number of matched points
     PHGProject* prj = (PHGProject*)parent();
-    PhotoPoints* tpht = prj->photoPoints(prj->curPhotoPoints());
-    ControlPoints* tctl = prj->controlPoints(prj->curControlPoints());
+    PhotoPoints* tpht = prj->photoPoints(m_pht);
+    ControlPoints* tctl = prj->controlPoints(m_ctl);
     // tpht = m_pht[m_curPhotoPoints];
     // tctl = m_ctl[m_curControlPoints];
     map<int, Point> *ctl = &tctl->m_points;
-    map<int, vector<Point> > *pht = &tpht->m_points;
+    map<int, PhotoPoint> *pht = &tpht->m_points;
     map<int, Point>::iterator itc;
-    map<int, vector<Point> >::iterator itp;
+    map<int, PhotoPoint>::iterator itp;
     int n = min(ctl->size(), pht->size());
     int* keys = new int[n];
     for (itc = ctl->begin(), itp = pht->begin();
@@ -383,12 +340,12 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
         switch (p)
         {
         case 0:   // the left photo
-            phtdata[i*2] = (*pht)[keys[i]][0].x - 100;
-            phtdata[i*2+1] = 100 - (*pht)[keys[i]][0].y;
+            phtdata[i*2] = (*pht)[keys[i]].x1 - 100;
+            phtdata[i*2+1] = 100 - (*pht)[keys[i]].y1;
             break;
         case 1:   // the right photo
-            phtdata[i*2] = (*pht)[keys[i]][0].x - 100 - (*pht)[keys[i]][1].x;
-            phtdata[i*2+1] = 100 - (*pht)[keys[i]][0].y + 10 - (*pht)[keys[i]][1].y;
+            phtdata[i*2] = (*pht)[keys[i]].x1 - 100 - (*pht)[keys[i]].x2;
+            phtdata[i*2+1] = 100 - (*pht)[keys[i]].y1 + 10 - (*pht)[keys[i]].y2;
             break;
         default:
             break;
@@ -396,7 +353,7 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
         phtdata[i*2] *= scalex;
         phtdata[i*2+1] *= scaley;
     }
-    *focus = -(*pht)[keys[0]][0].z;
+    *focus = -tpht->f();
     *ppht = phtdata;
     *pctl = ctldata;
 

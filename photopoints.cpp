@@ -23,16 +23,16 @@ ostream& operator<<(ostream& os, const PhotoPoints& pht)
 istream& operator>>(istream& is, PhotoPoints& pht)
 {
     is >> pht.m_pointNum >> pht.m_focus;
-    vector<Point> p;
-    p.push_back(*(new Point));
-    p.push_back(*(new Point));
+//    vector<Point> p;
+//    p.push_back(*(new Point));
+//    p.push_back(*(new Point));
 
     for (int i = 0; is && (i < pht.m_pointNum); ++i)
     {
-        is >> p[0].key >> p[0].x >> p[0].y >> p[1].x >> p[1].y;
-        p[0].z = p[1].z = -pht.m_focus;
-        p[1].key = p[0].key;
-        pht.m_points.insert(make_pair(p[0].key, p));
+        PhotoPoint p;
+        int key;
+        is >> key >> p.x1 >> p.y1 >> p.x2 >> p.y2;
+        pht.m_points.insert(make_pair(key, p));
     }
     return is;
 }
@@ -72,3 +72,9 @@ void PhotoPoints::setRfy(double val)
         emit rfyChanged(val);
     }
 }
+
+double PhotoPoints::f() const
+{
+    return m_focus;
+}
+

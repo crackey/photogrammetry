@@ -41,7 +41,7 @@ QVariant PhotoPointsModel::data(const QModelIndex& index, int role) const
     if (role == Qt::DisplayRole)
     {
         int i = 0;
-        map<int, vector<Point> >::const_iterator it;
+        map<int, PhotoPoint>::const_iterator it;
         for (it = m_root->m_points.begin();
              it != m_root->m_points.end() && i < index.row();
              ++it, ++i)
@@ -51,13 +51,13 @@ QVariant PhotoPointsModel::data(const QModelIndex& index, int role) const
         case 0:
             return QString("%1").arg(it->first);
         case 1:
-            return QString("%1").arg(it->second.at(0).x, 0, 'f', 3);
+            return QString("%1").arg(it->second.x1, 0, 'f', 3);
         case 2:
-            return QString("%1").arg(it->second.at(0).y, 0, 'f', 3);
+            return QString("%1").arg(it->second.y1, 0, 'f', 3);
         case 3:
-            return QString("%1").arg(it->second.at(1).x, 0, 'f', 3);
+            return QString("%1").arg(it->second.x2, 0, 'f', 3);
         case 4:
-            return QString("%1").arg(it->second.at(1).y, 0, 'f', 3);
+            return QString("%1").arg(it->second.y2, 0, 'f', 3);
         }
     }
     return QVariant();

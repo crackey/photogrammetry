@@ -24,8 +24,9 @@ istream& operator>>(istream& is, ControlPoints& cp)
     is >> cp.m_pointNum;
     for (int i = 0; is && (i < cp.m_pointNum); ++i)
     {
-        is >> p.key >> p.x >> p.y >> p.z;
-        cp.m_points.insert(make_pair<int, Point>(p.key, p));
+        int key;
+        is >> key >> p.x >> p.y >> p.z;
+        cp.m_points.insert(make_pair<int, Point>(key, p));
     }
     return is;
 }

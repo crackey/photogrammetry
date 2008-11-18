@@ -50,6 +50,7 @@ SET(_HEADERS
     lls.h
     intersection.h
     intersectionwidget.h
+    transform.h
     )
 SET(_SRCS
     main.cpp
@@ -63,6 +64,7 @@ SET(_SRCS
     lls.cpp
     intersection.cpp
     intersectionwidget.cpp
+    transform.cpp
     )
 SET(SRCS
     ${_HEADERS}
