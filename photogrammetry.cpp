@@ -59,6 +59,7 @@ Photogrammetry::Photogrammetry()
             ui.intersectionForwardAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(phtAvailable(QString)), this, SLOT(syncFiducial(QString)));
     connect(m_prj, SIGNAL(backwardFinished(bool)), this, SLOT(updateBackwardView(bool)));
+    connect(m_prj, SIGNAL(forwardFinished(bool)), this, SLOT(updateForwardView(bool)));
 //    connect(this, SIGNAL(backwardAvailable(bool)), ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
 //    connect(this, SIGNAL(forwardAvailable(bool)), ui.intersectionForwardAction, SLOT(setEnabled(bool)));
 }
@@ -145,14 +146,21 @@ void Photogrammetry::updateBackwardView(bool t)
         QTabWidget* tab = ui.tabWidget;
         QString tabLabel;
         tabLabel = tr("intersection");
+        IntersectionWidget* intsWidget = 0;
         for (int i = 0; i < tab->count(); ++i)
         {
             if (tabLabel == tab->tabText(i))
+            {
+                intsWidget = (IntersectionWidget*)tab->widget(i);
                 break;
+            }
         }
-        IntersectionWidget* intsWidget = new IntersectionWidget(m_prj->intersection(m_prj->curIntersection()));
+        if (intsWidget == 0)
+        {
+            intsWidget = new IntersectionWidget(m_prj->intersection(m_prj->curIntersection()));
+            tab->addTab(intsWidget,  tabLabel);
+        }
         intsWidget->updateBackward();
-        tab->addTab(intsWidget,  tabLabel);
     }
 }
 
@@ -160,7 +168,22 @@ void Photogrammetry::updateForwardView(bool t)
 {
     if (t)
     {
-        IntersectionWidget* intsWidget;
+        QTabWidget* tab = ui.tabWidget;
+        QString tabLabel;
+        tabLabel = tr("intersection");
+        IntersectionWidget* intsWidget = 0;
+        for (int i = 0; i < tab->count(); ++i)
+        {
+            if (tabLabel == tab->tabText(i))
+            {
+                intsWidget = (IntersectionWidget*)tab->widget(i);
+                break;
+            }
+        }
+        if (intsWidget != 0)
+        {
+            intsWidget->updateForward();
+        }
     }
 }
 // end of public slots

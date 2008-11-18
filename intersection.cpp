@@ -20,6 +20,7 @@ Intersection::Intersection(QString ctl, QString pht, QObject* parent)
     m_pht = pht;
     m_forwardResult = 0;
     m_numPhtPt = 0;
+    m_index = 0;
     for (int i = 0; i < 12; ++i)
         m_orient[i] = 0.0;
 }
@@ -28,6 +29,8 @@ Intersection::~Intersection()
 {
     if (m_forwardResult != 0)
         delete m_forwardResult;
+    if (m_index != 0)
+        delete m_index;
 }
 
 void Intersection::setControl(double* pd)
@@ -136,8 +139,10 @@ bool Intersection::forward()
     double scaley;
     scalex = tpht->m_fiducial[2] / tpht->m_fiducial[0];
     scaley = tpht->m_fiducial[3] / tpht->m_fiducial[1];
+    m_index = new int[np];
     for (int i = 0; it != pht->end(); ++it, ++i)
     {
+        m_index[i] = it->first;
         phtdata[i*6] = it->second[0].x - 100;
         phtdata[i*6+1] = 100 - it->second[0].y;
         phtdata[i*6+2] = it->second[0].z;
@@ -398,8 +403,9 @@ bool Intersection::controlData()
     return true;
 }
 
-int Intersection::forwardResult(double** result)
+int Intersection::forwardResult(int** index, double** result)
 {
+    *index = m_index;
     *result = m_forwardResult;
     return m_numPhtPt;
 }

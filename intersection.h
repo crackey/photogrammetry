@@ -20,7 +20,7 @@ public:
     void setRightPhoto(double* pd);
     bool forward();
     bool backward();
-    int forwardResult(double** result);
+    int forwardResult(int** index, double** result);
     double const* orient() const;
 
 private:
@@ -45,6 +45,7 @@ private:
 //    double m_ro[6]; // orient elements of right photo
     QString m_pht;
     double* m_forwardResult;
+    int *m_index;
     int m_numPhtPt;
     QString m_ctl;
 };
