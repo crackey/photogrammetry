@@ -1,7 +1,3 @@
-#include <vector>
-#include <map>
-#include <string>
-#include <sstream>
 #include <QtGui>
 
 #include "globaldefn.h"
@@ -161,6 +157,7 @@ void Photogrammetry::updateBackwardView(bool t)
             tab->addTab(intsWidget,  tabLabel);
         }
         intsWidget->updateBackward();
+        tab->setCurrentWidget(intsWidget);
     }
 }
 
@@ -183,6 +180,7 @@ void Photogrammetry::updateForwardView(bool t)
         if (intsWidget != 0)
         {
             intsWidget->updateForward();
+            tab->setCurrentWidget(intsWidget);
         }
     }
 }

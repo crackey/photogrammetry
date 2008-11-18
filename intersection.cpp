@@ -175,10 +175,12 @@ bool Intersection::forward()
         m_numPhtPt = np;
         return true;
     }
-    m_numPhtPt = np;
-    if (m_forwardResult != 0)
-        delete []m_forwardResult;
-    m_numPhtPt = 0;
+    else
+    {
+        if (m_forwardResult != 0)
+            delete []m_forwardResult;
+        m_numPhtPt = 0;
+    }
     return false;
 }
 
@@ -235,6 +237,11 @@ bool Intersection::backward()
     {
         qDebug() << m_orient[i];
     }
+    delete []lphtdata;
+    delete []rphtdata;
+    delete []lctldata;
+    delete []rctldata;
+
     if ((left==0) && (right==0))
         return true;
     return false;
@@ -268,7 +275,6 @@ int Intersection::backward_impl(double* pht, double* ctl, double* orient, double
         {
             orient[i] += l[i];
         }
-
     }
     qDebug() << "\n" << "Backward Iterations: " << it;
     if (a != 0)
@@ -277,7 +283,7 @@ int Intersection::backward_impl(double* pht, double* ctl, double* orient, double
     }
     if (l != 0)
     {
-//        delete []l;
+        delete []l;
     }
     return 0;
 }

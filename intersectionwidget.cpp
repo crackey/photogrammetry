@@ -85,7 +85,5 @@ void IntersectionWidget::updateForward()
             forwardTable->setItem(j, i, item);
         }
     }
-
- 
 }
 
