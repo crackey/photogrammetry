@@ -75,7 +75,7 @@ ADD_EXECUTABLE(photogrammetry
 
 
 IF(WIN32)
-    SET(LIBRARYS blas_win32.lib blas_win32.dll lapack_win32.lib lapack_win32.dll )
+    SET(LIBRARYS blas_win32 lapack_win32)
 ELSE(WIN32)
     SET(LIBRARYS  blas  lapack  )
 ENDIF(WIN32)

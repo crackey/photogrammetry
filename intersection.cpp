@@ -383,4 +383,3 @@ bool Intersection::controlData()
 {
     return true;
 }
-
