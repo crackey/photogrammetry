@@ -5,8 +5,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>801</width>
-    <height>601</height>
+    <width>1127</width>
+    <height>719</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -47,218 +47,226 @@
         <attribute name="title" >
          <string>源数据</string>
         </attribute>
-        <layout class="QGridLayout" name="gridLayout_3" >
-         <item row="0" column="0" colspan="2" >
-          <layout class="QVBoxLayout" name="verticalLayout_2" >
-           <property name="sizeConstraint" >
-            <enum>QLayout::SetMaximumSize</enum>
+        <layout class="QHBoxLayout" name="horizontalLayout_2" >
+         <item>
+          <widget class="QSplitter" name="splitter" >
+           <property name="orientation" >
+            <enum>Qt::Vertical</enum>
            </property>
-           <item>
-            <widget class="QLabel" name="photoPointsLabel" >
-             <property name="text" >
-              <string>相片点:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QTableView" name="photoPointsView" />
-           </item>
-          </layout>
-         </item>
-         <item rowspan="2" row="1" column="0" >
-          <layout class="QVBoxLayout" name="verticalLayout_11" >
-           <item>
-            <widget class="QLabel" name="controlPointsLabel" >
-             <property name="text" >
-              <string>控制点:</string>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QTableView" name="controlPointsView" />
-           </item>
-          </layout>
-         </item>
-         <item row="1" column="1" >
-          <widget class="QGroupBox" name="groupBox_2" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title" >
-            <string>仪器参数:</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout_2" >
-            <item row="0" column="0" >
-             <widget class="QLabel" name="xlLabel" >
-              <property name="sizePolicy" >
-               <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text" >
-               <string>X0 = </string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1" >
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_5" />
-            </item>
-            <item row="1" column="0" >
-             <widget class="QLabel" name="ylLabel" >
-              <property name="sizePolicy" >
-               <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text" >
-               <string>Y0 =</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="1" >
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_7" />
-            </item>
-            <item row="2" column="0" >
-             <widget class="QLabel" name="xrLabel" >
-              <property name="sizePolicy" >
-               <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text" >
-               <string>P0 = </string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="1" >
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_6" />
-            </item>
-            <item row="3" column="0" >
-             <widget class="QLabel" name="yrLabel" >
-              <property name="sizePolicy" >
-               <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="text" >
-               <string>Q0 =</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1" >
-             <widget class="QDoubleSpinBox" name="doubleSpinBox_8" />
-            </item>
-           </layout>
-          </widget>
-         </item>
-         <item row="2" column="1" >
-          <widget class="QGroupBox" name="fiducialMarkGroupBox" >
-           <property name="sizePolicy" >
-            <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="title" >
-            <string>框标距:</string>
-           </property>
-           <layout class="QGridLayout" name="gridLayout" >
-            <item row="0" column="0" >
-             <widget class="QLabel" name="label" >
-              <property name="text" >
-               <string>理论值:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="0" column="1" >
-             <widget class="QLabel" name="tfxLabel" >
-              <property name="text" >
-               <string>(X):</string>
-              </property>
-             </widget>
-            </item>
-            <item rowspan="2" row="0" column="2" >
-             <widget class="QDoubleSpinBox" name="tfxSpinBox" >
-              <property name="minimum" >
-               <double>0.000000000000000</double>
-              </property>
-              <property name="maximum" >
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="value" >
-               <double>0.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item rowspan="2" row="1" column="1" >
-             <widget class="QLabel" name="tfyLabel" >
-              <property name="text" >
-               <string>(Y):</string>
-              </property>
-             </widget>
-            </item>
-            <item row="2" column="2" >
-             <widget class="QDoubleSpinBox" name="tfySpinBox" >
-              <property name="minimum" >
-               <double>0.000000000000000</double>
-              </property>
-              <property name="maximum" >
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="value" >
-               <double>0.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="0" >
-             <widget class="QLabel" name="label_2" >
-              <property name="text" >
-               <string>实际值:</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="1" >
-             <widget class="QLabel" name="rfxLabel" >
-              <property name="text" >
-               <string>(X):</string>
-              </property>
-             </widget>
-            </item>
-            <item row="3" column="2" >
-             <widget class="QDoubleSpinBox" name="rfxSpinBox" >
-              <property name="minimum" >
-               <double>0.000000000000000</double>
-              </property>
-              <property name="maximum" >
-               <double>1000.000000000000000</double>
-              </property>
-              <property name="value" >
-               <double>0.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="1" >
-             <widget class="QLabel" name="rfyLabel" >
-              <property name="text" >
-               <string>(Y):</string>
-              </property>
-             </widget>
-            </item>
-            <item row="4" column="2" >
-             <widget class="QDoubleSpinBox" name="rfySpinBox" >
-              <property name="maximum" >
-               <double>1000.000000000000000</double>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <widget class="QWidget" native="1" name="widget_2" >
+            <layout class="QVBoxLayout" name="verticalLayout_2" >
+             <item>
+              <widget class="QLabel" name="photoPointsLabel" >
+               <property name="text" >
+                <string>相片点:</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QTableView" name="photoPointsView" />
+             </item>
+            </layout>
+           </widget>
+           <widget class="QWidget" native="1" name="widget" >
+            <layout class="QGridLayout" name="gridLayout_3" >
+             <item rowspan="2" row="0" column="0" >
+              <layout class="QVBoxLayout" name="verticalLayout" >
+               <item>
+                <widget class="QLabel" name="controlPointsLabel" >
+                 <property name="text" >
+                  <string>控制点:</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QTableView" name="controlPointsView" />
+               </item>
+              </layout>
+             </item>
+             <item row="0" column="1" >
+              <widget class="QGroupBox" name="groupBox_2" >
+               <property name="sizePolicy" >
+                <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="title" >
+                <string>仪器参数:</string>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_2" >
+                <item row="0" column="0" >
+                 <widget class="QLabel" name="xlLabel" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text" >
+                   <string>X0 = </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="1" >
+                 <widget class="QDoubleSpinBox" name="doubleSpinBox_5" />
+                </item>
+                <item row="1" column="0" >
+                 <widget class="QLabel" name="ylLabel" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text" >
+                   <string>Y0 =</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1" >
+                 <widget class="QDoubleSpinBox" name="doubleSpinBox_7" />
+                </item>
+                <item row="2" column="0" >
+                 <widget class="QLabel" name="xrLabel" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text" >
+                   <string>P0 = </string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1" >
+                 <widget class="QDoubleSpinBox" name="doubleSpinBox_6" />
+                </item>
+                <item row="3" column="0" >
+                 <widget class="QLabel" name="yrLabel" >
+                  <property name="sizePolicy" >
+                   <sizepolicy vsizetype="Preferred" hsizetype="Minimum" >
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text" >
+                   <string>Q0 =</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1" >
+                 <widget class="QDoubleSpinBox" name="doubleSpinBox_8" />
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="1" column="1" >
+              <widget class="QGroupBox" name="fiducialMarkGroupBox" >
+               <property name="sizePolicy" >
+                <sizepolicy vsizetype="Preferred" hsizetype="Preferred" >
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="title" >
+                <string>框标距:</string>
+               </property>
+               <layout class="QGridLayout" name="gridLayout" >
+                <item row="3" column="2" >
+                 <widget class="QDoubleSpinBox" name="tfySpinBox" >
+                  <property name="minimum" >
+                   <double>0.000000000000000</double>
+                  </property>
+                  <property name="maximum" >
+                   <double>1000.000000000000000</double>
+                  </property>
+                  <property name="value" >
+                   <double>0.000000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="0" >
+                 <widget class="QLabel" name="label_2" >
+                  <property name="text" >
+                   <string>实际值:</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="1" >
+                 <widget class="QLabel" name="rfxLabel" >
+                  <property name="text" >
+                   <string>(X):</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="5" column="2" >
+                 <widget class="QDoubleSpinBox" name="rfxSpinBox" >
+                  <property name="minimum" >
+                   <double>0.000000000000000</double>
+                  </property>
+                  <property name="maximum" >
+                   <double>1000.000000000000000</double>
+                  </property>
+                  <property name="value" >
+                   <double>0.000000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="1" >
+                 <widget class="QLabel" name="rfyLabel" >
+                  <property name="text" >
+                   <string>(Y):</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="6" column="2" >
+                 <widget class="QDoubleSpinBox" name="rfySpinBox" >
+                  <property name="maximum" >
+                   <double>1000.000000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item row="3" column="1" >
+                 <widget class="QLabel" name="tfyLabel" >
+                  <property name="text" >
+                   <string>(Y):</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="2" >
+                 <widget class="QDoubleSpinBox" name="tfxSpinBox" >
+                  <property name="minimum" >
+                   <double>0.000000000000000</double>
+                  </property>
+                  <property name="maximum" >
+                   <double>1000.000000000000000</double>
+                  </property>
+                  <property name="value" >
+                   <double>0.000000000000000</double>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="1" >
+                 <widget class="QLabel" name="tfxLabel" >
+                  <property name="text" >
+                   <string>(X):</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="2" column="0" >
+                 <widget class="QLabel" name="label" >
+                  <property name="text" >
+                   <string>理论值:</string>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
           </widget>
          </item>
         </layout>
@@ -335,13 +343,6 @@
              </widget>
             </item>
            </layout>
-           <zorder>label_3</zorder>
-           <zorder>label_4</zorder>
-           <zorder>label_5</zorder>
-           <zorder>label_6</zorder>
-           <zorder>label_8</zorder>
-           <zorder>label_7</zorder>
-           <zorder>lorientTableWidget</zorder>
           </widget>
          </item>
         </layout>
@@ -356,8 +357,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>801</width>
-     <height>31</height>
+     <width>1127</width>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu" >
@@ -465,7 +466,6 @@
  </widget>
  <tabstops>
   <tabstop>projectView</tabstop>
-  <tabstop>photoPointsView</tabstop>
   <tabstop>controlPointsView</tabstop>
  </tabstops>
  <resources/>
