@@ -9,9 +9,15 @@ class Intersection;
 
 class IntersectionWidget: public QWidget
 {
+    Q_OBJECT
 public:
-    IntersectionWidget(Intersection* ints, QWidget* parent = 0);
+    IntersectionWidget(Intersection* ints = 0, QWidget* parent = 0);
     ~IntersectionWidget();
+
+public slots:
+    void setIntersection(Intersection* ints);
+    void updateForward();
+    void updateBackward();
 
 private:
     Ui::IntersectionWidgetBase ui;
