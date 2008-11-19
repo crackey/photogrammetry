@@ -143,13 +143,13 @@ bool Intersection::forward()
 bool Intersection::backward()
 {
     // get the left photo
-    double *lphtdata;
-    double *lctldata;
+    double *lphtdata = 0;
+    double *lctldata = 0;
     double lfocus;
     int lnumPoints;
 
     lnumPoints = backwardData(&lphtdata, &lctldata, &lfocus, 0); 
-    qDebug() << "Number of matched Points:" << lnumPoints;
+    qDebug() << "Backward intersection.\n Number of matched Points:" << lnumPoints;
     qDebug() << "left photo data";
     for (int i = 0; i < lnumPoints; ++i)
     {
@@ -167,10 +167,12 @@ bool Intersection::backward()
     m_orient[2] = m_orient[2]/lnumPoints + 1e3*lfocus;
     m_orient[3] = m_orient[4] = m_orient[5] = 0.0;
     int left = backward_impl(lphtdata, lctldata, m_orient, lfocus, lnumPoints);
+    delete []lphtdata;
+    delete []lctldata;
     
     // get the right photo
-    double *rphtdata;
-    double *rctldata;
+    double *rphtdata = 0;
+    double *rctldata = 0;
     double rfocus;
     int rnumPoints;
 
@@ -191,16 +193,14 @@ bool Intersection::backward()
     m_orient[8] = m_orient[2]/rnumPoints + 1e3*rfocus;
     m_orient[9] = m_orient[10] = m_orient[11] = 0.0;
     int right = backward_impl(rphtdata, rctldata, m_orient+6, rfocus, rnumPoints);
+    delete []rphtdata;
+    delete []rctldata;
 
     qDebug() << "Orient elements:"; 
     for (int i = 0; i < 12; ++i)
     {
         qDebug() << m_orient[i];
     }
-    delete []lphtdata;
-    delete []rphtdata;
-    delete []lctldata;
-    delete []rctldata;
 
     if ((left==0) && (right==0))
         return true;
@@ -237,14 +237,8 @@ int Intersection::backward_impl(double* pht, double* ctl, double* orient, double
         }
     }
     qDebug() << "\n" << "Backward Iterations: " << it;
-    if (a != 0)
-    {
-        delete []a;
-    }
-    if (l != 0)
-    {
-        delete []l;
-    }
+    delete []a;
+    delete []l;
     return 0;
 }
 
@@ -257,25 +251,8 @@ int Intersection::forward_impl(double* p , /* photo data */
     double R2[9];
 
     // compute the two transform matrixes.
-    R1[0] = a1(o);
-    R1[1] = a2(o);
-    R1[2] = a3(o);
-    R1[3] = b1(o);
-    R1[4] = b2(o);
-    R1[5] = b3(o);
-    R1[6] = c1(o);
-    R1[7] = c2(o);
-    R1[8] = c3(o);
-
-    R2[0] = a1(o+6);
-    R2[1] = a2(o+6);
-    R2[2] = a3(o+6);
-    R2[3] = b1(o+6);
-    R2[4] = b2(o+6);
-    R2[5] = b3(o+6);
-    R2[6] = c1(o+6);
-    R2[7] = c2(o+6);
-    R2[8] = c3(o+6);
+    transform(R1, o);
+    transform(R2, o+6);
 
     double B[3];
     B[0] = o[6] - o[0];
@@ -297,15 +274,71 @@ int Intersection::forward_impl(double* p , /* photo data */
     return 0;
 }
 
-// p = 0 for left photo, 1 for right
-int Intersection::backwardData(double** ppht, double** pctl, double* focus, int p)  
+// side = 0 for left photo, 1 for right
+int Intersection::backwardData(double** ppht, double** pctl, double* focus, int side)  
 {
-    int np = 0; // number of matched points
     PHGProject* prj = (PHGProject*)parent();
     PhotoPoints* tpht = prj->photoPoints(m_pht);
     ControlPoints* tctl = prj->controlPoints(m_ctl);
     // tpht = m_pht[m_curPhotoPoints];
     // tctl = m_ctl[m_curControlPoints];
+    int* phtindex;
+    int* ctlindex;
+    double* phtdata;
+    double* ctldata;
+    int nctlp;
+    int nphtp;
+    nctlp = tctl->data(&ctldata, &ctlindex);
+    nphtp = tpht->data((side == 0 ? PhotoPoints::Left : PhotoPoints::Right),
+                       focus, &phtdata, &phtindex);
+    int i, j;
+    int np = 0; // number of matched points
+    // the keys was guaranteed in increasing order
+    for (i = 0, j = 0; i<nctlp && j<nphtp; )
+    {
+        if (phtindex[i] == ctlindex[j])
+        {
+            ++np;
+            ++i;
+            ++j;
+        }
+        else if (phtindex[i] > ctlindex[j])
+            ++j;
+        else
+            ++i;
+    }
+    double* mpd = new double[2*np]; // matched photo data
+    double* mpc = new double[3*np]; // matched control data
+    np = 0;
+    for (i = 0, j = 0; i<nctlp && j<nphtp; )
+    {
+        if (phtindex[i] == ctlindex[j])
+        {
+            mpd[np*2] = phtdata[i*2];
+            mpd[np*2+1] = phtdata[i*2+1];
+            // x and y should be exchanged
+            // control data was in meters while photo data in milimeters
+            mpc[np*3] = ctldata[j*3+1] * 1000;    
+            mpc[np*3+1] = ctldata[j*3] * 1000; 
+            mpc[np*3+2] = ctldata[j*3+2] * 1000;
+            ++np;
+            ++i;
+            ++j;
+        }
+        else if (phtindex[i] > ctlindex[j])
+            ++j;
+        else
+            ++i;
+    }
+    *ppht = mpd;
+    *pctl = mpc;
+    delete []phtindex;
+    delete []ctlindex;
+    delete []phtdata;
+    delete []ctldata;
+
+    return np;
+#if 0
     map<int, Point> *ctl = &tctl->m_points;
     map<int, PhotoPoint> *pht = &tpht->m_points;
     map<int, Point>::iterator itc;
@@ -361,12 +394,7 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
     *pctl = ctldata;
 
     delete []keys;
-    return np;
-}
-
-bool Intersection::controlData()
-{
-    return true;
+#endif
 }
 
 int Intersection::forwardResult(int** index, double** result)

@@ -35,7 +35,10 @@ bool Orientation::relative()
     double *data = 0;
     double f;
     int np;
-    np = photoData(&data, &f);
+    PHGProject* prj = (PHGProject*)parent();
+    PhotoPoints* tpht = prj->photoPoints(m_pht);
+    np = tpht->data(PhotoPoints::Left | PhotoPoints::Right, &f, &data);
+//    np = photoData(&data, &f);
     qDebug() << "relative orientation data";
     qDebug() << "focus:" << f;
     for (int i = 0; i < np; ++i)
@@ -53,15 +56,7 @@ bool Orientation::relative()
     double bz;
     double R1[9];
     double R2[9];
-    R1[0] = a1(o);
-    R1[1] = a2(o);
-    R1[2] = a3(o);
-    R1[3] = b1(o);
-    R1[4] = b2(o);
-    R1[5] = b3(o);
-    R1[6] = c1(o);
-    R1[7] = c2(o);
-    R1[8] = c3(o);
+    transform(R1, m_orient);
 //    np = 6;// for testing, should be deleted
     double N1, N2, Q, left[3], tleft[3], right[3], tright[3];
     do
@@ -69,15 +64,7 @@ bool Orientation::relative()
         ++itn;
         for (int i = 0; i < np; ++i)
         {
-            R2[0] = a1(o+6);
-            R2[1] = a2(o+6);
-            R2[2] = a3(o+6);
-            R2[3] = b1(o+6);
-            R2[4] = b2(o+6);
-            R2[5] = b3(o+6);
-            R2[6] = c1(o+6);
-            R2[7] = c2(o+6);
-            R2[8] = c3(o+6);
+            transform(R2, m_orient+6);
             by = bx*m_rol[0];
             bz = bx*m_rol[1];
             right[0] = data[4*i+2];
@@ -136,11 +123,12 @@ bool Orientation::absolute()
 {
 }
 
+#if 0
 int Orientation::photoData(double** data, double* f)
 {
     PHGProject* prj = (PHGProject*)parent();
     PhotoPoints* tpht = prj->photoPoints(m_pht);
-
+    np = tpht->data(PhotoPoints::Left | PhotoPoints::Right, f, data);
     map<int, PhotoPoint> *pht = &tpht->m_points;
     map<int, PhotoPoint>::iterator itp;
     int np = tpht->count(); // number of points.
@@ -157,4 +145,5 @@ int Orientation::photoData(double** data, double* f)
     *data = phtdata;
     return np;
 }
+#endif
 

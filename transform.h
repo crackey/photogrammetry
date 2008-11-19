@@ -10,5 +10,6 @@ double b3(double* orient);
 double c1(double* orient);
 double c2(double* orient);
 double c3(double* orient);
+void transform(double* r, double* o);
 
 #endif

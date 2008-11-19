@@ -27,8 +27,7 @@ private:
     bool orientNotExact(double* orient);
     int backward_impl(double* pht, double* ctl, double* orient, double f, int n);
     int forward_impl(double* p , double* o, double* out, int n);
-    int backwardData(double** ppht, double** pctl, double* focus, int p);
-    bool controlData();
+    int backwardData(double** ppht, double** pctl, double* focus, int side);
 
     double m_orient[12]; // orient elements, 0-5 for left photo, 6-11 for right
 //    double m_ro[6]; // orient elements of right photo

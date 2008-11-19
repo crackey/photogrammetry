@@ -198,7 +198,6 @@ void PHGProject::backwardIntersection()
             emit backwardFinished(false);
         }
     }
-
 }
 
 void PHGProject::relativeOrientation()

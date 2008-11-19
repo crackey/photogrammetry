@@ -17,11 +17,16 @@ class PhotoPoints : public QObject
     friend istream& operator>>(istream& is, PhotoPoints& pht);
     friend class PhotoPointsModel;
 public:
+    enum Side { Left = 0x01, Right = 0x02 };
+
     PhotoPoints(QObject* parent = 0);
     ~PhotoPoints();
 
     size_t count() const;
+    // return focus
     double f() const;
+    // get data, xyval and index would not be fetched if equals to 0 
+    int data(int flag, double* focus, double** xyval = 0, int** index = 0) const;
                                                                   
 public slots:
     void setRfx(double val);

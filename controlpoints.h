@@ -11,16 +11,15 @@ using namespace std;
 class ControlPoints
 {
     friend class ControlPointsModel;
+    friend ostream& operator<<(ostream& os, const ControlPoints& cp);
+    friend istream& operator>>(istream& is, ControlPoints& cp);
 public:
     ControlPoints();
     ~ControlPoints();
 
-    size_t count()
-    {
-        return m_pointNum;
-    }
-    friend ostream& operator<<(ostream& os, const ControlPoints& cp);
-    friend istream& operator>>(istream& is, ControlPoints& cp);
+    size_t count() const;
+    int data(double** xyzval = 0, int** index = 0) const;
+ 
 //private:
     int m_pointNum;
     std::map<int, Point> m_points;
