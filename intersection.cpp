@@ -102,26 +102,25 @@ bool Intersection::forward()
         phtdata[i*6] = it->second.x1 - 100;
         phtdata[i*6+1] = 100 - it->second.y1;
 //        phtdata[i*6+2] = it->second[0].z;
-        phtdata[i*6+2] = tpht->f();
+        phtdata[i*6+2] = -tpht->f();
         phtdata[i*6+3] = phtdata[i*6] - it->second.x2;
         phtdata[i*6+4] = phtdata[i*6+1] + 10 - it->second.y2;
-        phtdata[i*6+5] = tpht->f();
+        phtdata[i*6+5] = -tpht->f();
 
         phtdata[i*6] *= scalex;
         phtdata[i*6+1] *= scaley;
         phtdata[i*6+3] *= scalex;
         phtdata[i*6+4] *= scaley;
-        qDebug() << phtdata[i*6] << phtdata[i*6+1] 
-            << phtdata[i*6+2] << phtdata[i*6+3]
-            << phtdata[i*6+4] << phtdata[i*6+5];
+    }
+    qDebug() << "forward intersection photo data";
+    for (int i = 0; i < tpht->count(); ++i)
+    {
+        qDebug() << phtdata[i*6] << phtdata[i*6+1] << phtdata[i*6+2] << phtdata[i*6+3] << phtdata[i*6+4] << phtdata[i*6+5];
     }
     m_forwardResult = new double[3*np];
 
     int status = forward_impl(phtdata, m_orient, m_forwardResult, np);
-    for (int i = 0; i < 12; ++i)
-    {
-        qDebug() << m_orient[i];
-    }
+    qDebug() << "forward result:";
     for (int i = 0; i < np; ++i)
     {
         qDebug() << m_forwardResult[3*i]/1e3 << m_forwardResult[3*i+1]/1e3 << m_forwardResult[3*i+2]/1e3;
@@ -150,6 +149,13 @@ bool Intersection::backward()
     int lnumPoints;
 
     lnumPoints = backwardData(&lphtdata, &lctldata, &lfocus, 0); 
+    qDebug() << "Number of matched Points:" << lnumPoints;
+    qDebug() << "left photo data";
+    for (int i = 0; i < lnumPoints; ++i)
+    {
+        qDebug() << lphtdata[i*2+0] << lphtdata[i*2+1] << lctldata[i*3+0] << lctldata[i*3+1] << lctldata[i*3+2];
+    }
+
     for (int i = 0; i < lnumPoints; ++i)
     {
         m_orient[0] += lctldata[i*3];
@@ -162,14 +168,6 @@ bool Intersection::backward()
     m_orient[3] = m_orient[4] = m_orient[5] = 0.0;
     int left = backward_impl(lphtdata, lctldata, m_orient, lfocus, lnumPoints);
     
-#if 1
-    qDebug() << "Number of matched Points:" << lnumPoints;
-    for (int i = 0; i < lnumPoints; ++i)
-    {
-        qDebug() << lphtdata[i*2+0] << lphtdata[i*2+1] << lctldata[i*3+0] << lctldata[i*3+1] << lctldata[i*3+2];
-    }
-#endif
-
     // get the right photo
     double *rphtdata;
     double *rctldata;
@@ -177,6 +175,11 @@ bool Intersection::backward()
     int rnumPoints;
 
     rnumPoints = backwardData(&rphtdata, &rctldata, &rfocus, 1); 
+    qDebug() << "right photo data";
+    for (int i = 0; i < rnumPoints; ++i)
+    {
+        qDebug() << rphtdata[i*2+0] << rphtdata[i*2+1] << rctldata[i*3+0] << rctldata[i*3+1] << rctldata[i*3+2];
+    }
     for (int i = 0; i < lnumPoints; ++i)
     {
         m_orient[6] += rctldata[i*3];
@@ -353,7 +356,7 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
         phtdata[i*2] *= scalex;
         phtdata[i*2+1] *= scaley;
     }
-    *focus = -tpht->f();
+    *focus = tpht->f();
     *ppht = phtdata;
     *pctl = ctldata;
 

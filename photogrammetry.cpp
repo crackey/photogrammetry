@@ -53,6 +53,8 @@ Photogrammetry::Photogrammetry()
             ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(forwardAvailable(bool)), 
             ui.intersectionForwardAction, SLOT(setEnabled(bool)));
+    connect(m_prj, SIGNAL(relativeAvailable(bool)), 
+            ui.orientationRelativeAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(phtAvailable(QString)), this, SLOT(syncFiducial(QString)));
     connect(m_prj, SIGNAL(backwardFinished(bool)), this, SLOT(updateBackwardView(bool)));
     connect(m_prj, SIGNAL(forwardFinished(bool)), this, SLOT(updateForwardView(bool)));
@@ -89,7 +91,9 @@ void Photogrammetry::on_fileExitAction_triggered()
 }
 
 void Photogrammetry::on_orientationRelativeAction_triggered()
-{}
+{
+    m_prj->relativeOrientation();
+}
 
 void Photogrammetry::on_orientationAbsoluteAction_triggered()
 {}

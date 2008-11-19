@@ -34,6 +34,8 @@ public slots:
     void addIntersection(QString key);
     void forwardIntersection();
     void backwardIntersection();
+    void relativeOrientation();
+    void abstractOrientation();
     
 signals:
     void fileLoaded(QString filepath);
@@ -43,6 +45,10 @@ signals:
     void ctlAvailable(QString filepath);
     void backwardFinished(bool);
     void forwardFinished(bool);
+    void relativeAvailable(bool);
+    void relativeFinished(bool);
+    void absoluteAvailable(bool);
+    void absoluteFinished(bool);
 
 private:
     map<QString, PhotoPoints*> m_pht;

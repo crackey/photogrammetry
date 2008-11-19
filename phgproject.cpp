@@ -6,6 +6,7 @@
 #include "photopoints.h"
 #include "controlpoints.h"
 #include "intersection.h"
+#include "orientation.h"
 
 using namespace std;
 
@@ -135,6 +136,10 @@ void PHGProject::setCurPhotoPoints(QString filepath)
 
 void PHGProject::setProjectStatus(QString filepath)
 {
+    if (!m_curPhotoPoints.isEmpty())
+    {
+        emit relativeAvailable(true);
+    }
     if (!m_curControlPoints.isEmpty() && !m_curPhotoPoints.isEmpty())
     {
         emit backwardAvailable(true);
@@ -195,4 +200,13 @@ void PHGProject::backwardIntersection()
     }
 
 }
+
+void PHGProject::relativeOrientation()
+{
+    Orientation* orient = new Orientation(m_curControlPoints, m_curPhotoPoints, this);
+    orient->relative();
+}
+
+void PHGProject::abstractOrientation()
+{}
 

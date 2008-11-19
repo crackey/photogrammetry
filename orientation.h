@@ -1,6 +1,10 @@
 #ifndef ORIENTATION_H
 #define ORIENTATTION_H
 
+#include <QObject>
+
+class QString;
+
 class Orientation : public QObject
 {
     Q_OBJECT
@@ -12,10 +16,13 @@ public:
     bool absolute();
 
 private:
-    int photoData(double** data);
+    bool exact(double* data);
+
+    int photoData(double** data, double* f);
     double m_orient[12]; // 0-5 was orient elements for left photo which
-                         // should normally be 0, 6-11 was the relative orientation
-                         // of the right photo. m_orient[11] is Bx.
+                         // should normally be 0, 6-11 for right photo
+    static const double m_limit = 3e-5;
+    double m_rol[5];    // relative orient elements.
     QString m_pht;
     QString m_ctl;
 };
