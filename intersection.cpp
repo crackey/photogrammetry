@@ -107,10 +107,10 @@ bool Intersection::forward()
         phtdata[i*6+4] = phtdata[i*6+1] + 10 - it->second.y2;
         phtdata[i*6+5] = -tpht->f();
 
-        phtdata[i*6] *= scalex;
-        phtdata[i*6+1] *= scaley;
-        phtdata[i*6+3] *= scalex;
-        phtdata[i*6+4] *= scaley;
+        phtdata[i*6] /= scalex;
+        phtdata[i*6+1] /= scaley;
+        phtdata[i*6+3] /= scalex;
+        phtdata[i*6+4] /= scaley;
     }
     qDebug() << "forward intersection photo data";
     for (int i = 0; i < tpht->count(); ++i)

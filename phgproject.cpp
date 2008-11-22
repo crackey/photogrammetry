@@ -162,17 +162,12 @@ void PHGProject::forwardIntersection()
             break;
         }
     }
-    if (ints != 0)
+    if (ints != 0 && ints->forward())
     {
-        if (ints->forward())
-        {
-            emit forwardFinished(true);
-        }
+        emit forwardFinished(true);
+        return;
     }
-    else
-    {
-        emit forwardFinished(false);
-    }
+    emit forwardFinished(false);
 }
 
 void PHGProject::backwardIntersection()
@@ -192,20 +187,40 @@ void PHGProject::backwardIntersection()
             m_intersection.insert(make_pair(key, ints));
             m_curIntersection = key;
             emit backwardFinished(true);
-        }
-        else
-        {
-            emit backwardFinished(false);
+            return;
         }
     }
+    emit backwardFinished(false);
 }
 
 void PHGProject::relativeOrientation()
 {
-    Orientation* orient = new Orientation(m_curControlPoints, m_curPhotoPoints, this);
-    orient->relative();
+    //    Orientation* orient = new Orientation(m_curControlPoints, m_curPhotoPoints, this);
+    //    orient->relative();
+
+    QString key = m_curControlPoort + m_curPhotoPoort;
+    map<QString, Orientation*>::iterator it;
+    for (it = m_orientation.begin(); it != m_orientation.end(); ++it)
+    {
+        if (it->first == key)
+            break;
+    }
+    if (it == m_orientation.end())
+    {
+        Orientation* ort = new Orientation(m_curControlPoort, m_curPhotoPoort, this);
+        if (ort->relative())
+        {
+            m_orientation.insert(make_pair(key, ort));
+            m_curOrientation = key;
+            emit relativeFinished(true);
+            return;
+        }
+    }
+    emit relativeFinished(false);
 }
 
 void PHGProject::abstractOrientation()
-{}
+{
+
+}
 

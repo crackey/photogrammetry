@@ -8,6 +8,7 @@ class QString;
 class PhotoPoints;
 class ControlPoints;
 class Intersection;
+class Orientation;
 
 using namespace std;
 
@@ -54,6 +55,8 @@ private:
     map<QString, PhotoPoints*> m_pht;
     map<QString, ControlPoints*> m_ctl;
     map<QString, Intersection*> m_intersection;
+    map<QString, Orientation*> m_orientation;
+    QString m_curOrientation;
     QString m_curIntersection;
     QString m_curPhotoPoints;
     QString m_curControlPoints;
