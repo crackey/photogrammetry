@@ -16,6 +16,7 @@ set(QTMOC_SRCS
     intersection.h
     intersectionwidget.h
     orientation.h
+    onestep.h
     )
 QT4_WRAP_CPP(QT_MOC_SRCS ${QTMOC_SRCS})
 
@@ -53,6 +54,7 @@ SET(_HEADERS
     intersectionwidget.h
     transform.h
     orientation.h
+    onestep.h
     )
 SET(_SRCS
     main.cpp
@@ -68,6 +70,7 @@ SET(_SRCS
     intersectionwidget.cpp
     transform.cpp
     orientation.cpp
+    onestep.cpp
     )
 SET(SRCS
     ${_HEADERS}

@@ -19,6 +19,7 @@ public:
 
     size_t count() const;
     int data(double** xyzval = 0, int** index = 0) const;
+    int data(map<int, Point>* ctl, vector<int>* index = 0) const;
  
 //private:
     int m_pointNum;

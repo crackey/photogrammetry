@@ -24,6 +24,7 @@ public slots:
     void on_orientationAbsoluteAction_triggered();
     void on_intersectionForwardAction_triggered();
     void on_intersectionBackwardAction_triggered();
+    void on_onestepAction_triggered();
     void on_helpAboutAction_triggered();
 
     // my slots:

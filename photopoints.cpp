@@ -15,6 +15,102 @@ size_t PhotoPoints::count() const
     return m_pointNum;
 }
 
+#if 0
+int PhotoPoints::data(int flag, double* focus, map<int, vector<double> >* pht)
+{
+    int np = 0;
+    *focus = m_focus;
+    if (pht != 0)
+    {
+        np = m_points.size();
+        pht->reserve(np);
+        vector<double> tmp;
+        switch (flag)
+        {
+        case Left:
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                tmp->insert(itp->second.x1 - 100);
+                tmp->insert(100 - itp->second.y1);
+            } 
+            break;
+        case Right:
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                tmp->insert(itp->second.x1-100 - itp->second.x2);
+                tmp->insert(100-itp->second.y1 + 10 - itp->second.y2);
+            } 
+            break;
+        case Left | Right:
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                tmp->insert(itp->second.x1 - 100);
+                tmp->insert(100 - itp->second.y1);
+                tmp->insert(tmp->at(0) - itp->second.x2);
+                tmp->insert(tmp->at(1) + 10 - itp->second.y2);
+            } 
+            break;
+        default:
+            break;
+        }
+    
+    }
+}
+#endif
+
+int PhotoPoints::data(int flag, double* focus, vector<double>* pht, vector<int>* index) const
+{
+    int np = 0;        // number of points retrived.
+    *focus = m_focus;
+    map<int, PhotoPoint>::const_iterator itp;
+    int i;
+    if (pht != 0)  // retrive x,y values
+    {
+        np = m_points.size();
+        switch (flag)
+        {
+        case Left:
+            pht->reserve(np*2);
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                pht->push_back(itp->second.x1 - 100);
+                pht->push_back(100 - itp->second.y1);
+            } 
+            break;
+        case Right:
+            pht->reserve(np*2);
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                pht->push_back(itp->second.x1-100 - itp->second.x2);
+                pht->push_back(100-itp->second.y1 + 10 - itp->second.y2);
+            } 
+            break;
+        case Left | Right:
+            pht->reserve(np*4);
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                pht->push_back(itp->second.x1 - 100);
+                pht->push_back(100 - itp->second.y1);
+                pht->push_back(pht->at(i*4) - itp->second.x2);
+                pht->push_back(pht->at(i*4+1) + 10 - itp->second.y2);
+            } 
+            break;
+        default:
+            break;
+        }
+    }
+    if (index != 0)
+    {
+        np = m_points.size();
+        index->reserve(np);
+        for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+        {
+            index->push_back(itp->first);
+        }
+    }
+    return np;
+}
+
 int PhotoPoints::data(int flag, double* focus, double** xyval, int** index) const
 {
     int np = 0;        // number of points retrived.

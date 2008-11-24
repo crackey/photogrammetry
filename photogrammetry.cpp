@@ -55,6 +55,8 @@ Photogrammetry::Photogrammetry()
             ui.intersectionForwardAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(relativeAvailable(bool)), 
             ui.orientationRelativeAction, SLOT(setEnabled(bool)));
+    connect(m_prj, SIGNAL(onestepAvailable(bool)), 
+            ui.onestepAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(phtAvailable(QString)), this, SLOT(syncFiducial(QString)));
     connect(m_prj, SIGNAL(backwardFinished(bool)), this, SLOT(updateBackwardView(bool)));
     connect(m_prj, SIGNAL(forwardFinished(bool)), this, SLOT(updateForwardView(bool)));
@@ -106,6 +108,11 @@ void Photogrammetry::on_intersectionForwardAction_triggered()
 void Photogrammetry::on_intersectionBackwardAction_triggered()
 {
     m_prj->backwardIntersection();
+}
+
+void Photogrammetry::on_onestepAction_triggered()
+{
+    m_prj->onestep();
 }
 
 void Photogrammetry::on_helpAboutAction_triggered()

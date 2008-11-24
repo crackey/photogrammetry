@@ -1,9 +1,15 @@
+#include <vector>
+#include <map>
+#include <cmath>
+
 #include "controlpoints.h"
 #include "photopoints.h"
 #include "transform.h"
+#include "phgproject.h"
 #include "lls.h"
 #include "onestep.h"
 
+using namespace std;
 
 Onestep::Onestep(QString ctl, QString pht, QObject* parent)
     : QObject(parent)
@@ -17,6 +23,7 @@ Onestep::~Onestep()
 
 }
 
+#if 0
 void Onestep::prepare(double** ctl, double** pht, double* f, int** phtindex, int** ctlindex, int* numctl, int* numpht)
 {
     ControlPoints* pctl = static_cast<PHGProject*>parent()->controlPoints(m_ctl);
@@ -52,7 +59,147 @@ void Onestep::prepare(double** ctl, double** pht, double* f, int** phtindex, int
     }
  
 }
+#endif
 
+bool Onestep::calculate()
+{
+    ControlPoints* pctl = static_cast<PHGProject*>(parent())->controlPoints(m_ctl);
+    PhotoPoints* ppht = static_cast<PHGProject*>(parent())->photoPoints(m_pht);
+    vector<double> pht;
+    vector<int> index;
+    double focus;
+    int np;               // total number of points
+    np = ppht->data(3, &focus, &pht, &index);
+    map<int, Point> ctl;
+    int nc;                // number of control points
+    nc = pctl->data(&ctl, &index);
+    int nun = np - nc;     // number of unknow points
+
+    double* a = new double[4*np*(12+3*nun)]; // matrix A and B
+    double* l = new double[4*np];              // matrix l
+    double* s = new double[4*np];
+    double* orient = new double[12];
+    double* points = new double[3*np];
+    memset(orient, 0, sizeof(double)*12);
+    memset(points, 0, sizeof(double)*3*np);
+
+    // initialize orient elements
+    for (int i = 0; i < nc; ++i)
+    {
+        orient[0] += points[i*3];
+        orient[1] += points[i*3+1];
+        orient[2] += points[i*3+2];
+    }
+    orient[0] /= nc;
+    orient[1] /= nc;
+    orient[2] = orient[2]/nc + 1e3*focus;
+    orient[3] = orient[4] = orient[5] = 0.0;
+    memcpy(orient+6, orient, sizeof(double)*6);
+
+    // initialize points values
+    map<int, Point>::const_iterator itc;
+    int i;
+    int* isctl = new int[np];
+    memset(isctl, 0, sizeof(int)*np);
+    for (i = 0, itc = ctl.begin(); i < np && itc != ctl.end(); ++i)
+    {
+        points[i*3] = itc->second.x;
+        points[i*3+1] = itc->second.y;
+        points[i*3+2] = itc->second.z;
+        if (index[i] == itc->first)
+        {
+            isctl[i] = 1;
+            ++itc;
+        }
+    }
+    
+    int maxit = 30;
+    int itn = 0;
+    do
+    {
+        // set matrix a
+        memset(a, 0, sizeof(double)*4*np*(12+3*nc));
+        for (i = 0; i < np; ++i)
+        {
+            int nc = n*3 + 12; // number of columns of matrix a
+            a[0] = (a1(o)*f + a3(o)*pht[i*4]) / z_(o, ctl, i);
+            a[1] = (b1(o)*f + b3(o)*pht[i*4]) / z_(o, ctl, i);
+            a[2] = (c1(o)*f + c3(o)*pht[i*4]) / z_(o, ctl, i);
+            a[3] = pht[i*4+1]*sin(o[4]) - 
+                (pht[i*4]*(pht[i*4]*cos(o[5])-pht[i*4+1]*sin(o[5]))/f
+                 + f*cos(o[5])) * cos(o[4]);
+            a[4] = -f*sin(o[5]) - 
+                pht[i*4] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
+            a[5] = pht[i*4+1];
+            a[nc] = (a2(o)*f + a3(o)*pht[i*4+1]) / z_(o, ctl, i);
+            a[nc+1] = (b2(o)*f + b3(o)*pht[i*4+1]) / z_(o, ctl, i);
+            a[nc+2] = (c2(o)*f + c3(o)*pht[i*4+1]) / z_(o, ctl, i);
+            a[nc+3] = -pht[i*4]*sin(o[4]) - (pht[i*4+1]*(pht[i*4]*cos(o[5])
+                                                         -pht[i*4+1]*sin(o[5]))/f 
+                                             -f*sin(o[5]))*cos(o[4]);
+            a[nc+4] = -f*cos(o[5]) - pht[i*4+1] 
+                      * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
+            a[nc+5] = -pht[i*4];
+        }
+    } while(!exact(l,12+3*nun) && itn<maxit);
+}
+
+void Onestep::ma(vector<double> pht, double* p, double* o, int isc, double f, int n, int s)
+{
+    int nc = n*3 + 12; // number of columns of matrix a
+    a[0] = (a1(o)*f + a3(o)*pht[i*4]) / z_(o, ctl, i);
+    a[1] = (b1(o)*f + b3(o)*pht[i*4]) / z_(o, ctl, i);
+    a[2] = (c1(o)*f + c3(o)*pht[i*4]) / z_(o, ctl, i);
+    a[3] = pht[i*4+1]*sin(o[4]) - 
+        (pht[i*4]*(pht[i*4]*cos(o[5])-pht[i*4+1]*sin(o[5]))/f
+         + f*cos(o[5])) * cos(o[4]);
+    a[4] = -f*sin(o[5]) - 
+        pht[i*4] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
+    a[5] = pht[i*4+1];
+    a[nc] = (a2(o)*f + a3(o)*pht[i*4+1]) / z_(o, ctl, i);
+    a[nc+1] = (b2(o)*f + b3(o)*pht[i*4+1]) / z_(o, ctl, i);
+    a[nc+2] = (c2(o)*f + c3(o)*pht[i*4+1]) / z_(o, ctl, i);
+    a[nc+3] = -pht[i*4]*sin(o[4]) - (pht[i*4+1]*(pht[i*4]*cos(o[5])
+                                                 -pht[i*4+1]*sin(o[5]))/f 
+                                     -f*sin(o[5]))*cos(o[4]);
+    a[nc+4] = -f*cos(o[5]) - pht[i*4+1] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
+    a[nc+5] = -pht[i*4];
+}
+
+bool Onestep::exact(double* x, int n)
+{
+    double lenlim = 10; // length limits
+    double anglim = 3e-5; // angle limits
+    int i;
+    for (i = 0; i < 3; ++i)
+    {
+        if (fabs(x[i]) > lenlim)
+            return false;
+    }
+    for (i = 3; i < 6; ++i)
+    {
+        if (fabs(x[i]) > anglim)
+            return false;
+    }
+    for (i = 6; i < 9; ++i)
+    {
+        if (fabs(x[i]) > lenlim)
+            return false;
+    }
+    for (i = 9; i < 12; ++i)
+    {
+        if (fabs(x[i]) > anglim)
+            return false;
+    }
+    for (i = 12; i < 12+3*n; ++i)
+    {
+        if (fabs(x[i]) > lenlim)
+            return false;
+    }
+    return true;
+}
+
+#if 0
 bool Onestep::calculate()
 {
     ControlPoints* pctl = static_cast<PHGProject*>parent()->controlPoints(m_ctl);
@@ -257,3 +404,4 @@ void Onestep::ma(double* a, int* mi, double* pht, double f, double* o,int np, in
     }
 }
 
+#endif

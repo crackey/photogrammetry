@@ -7,6 +7,7 @@
 #include "controlpoints.h"
 #include "intersection.h"
 #include "orientation.h"
+#include "onestep.h"
 
 using namespace std;
 
@@ -143,6 +144,7 @@ void PHGProject::setProjectStatus(QString filepath)
     if (!m_curControlPoints.isEmpty() && !m_curPhotoPoints.isEmpty())
     {
         emit backwardAvailable(true);
+        emit onestepAvailable(true);
     }
 }
 
@@ -198,7 +200,7 @@ void PHGProject::relativeOrientation()
     //    Orientation* orient = new Orientation(m_curControlPoints, m_curPhotoPoints, this);
     //    orient->relative();
 
-    QString key = m_curControlPoort + m_curPhotoPoort;
+    QString key = m_curControlPoints + m_curPhotoPoints;
     map<QString, Orientation*>::iterator it;
     for (it = m_orientation.begin(); it != m_orientation.end(); ++it)
     {
@@ -207,7 +209,7 @@ void PHGProject::relativeOrientation()
     }
     if (it == m_orientation.end())
     {
-        Orientation* ort = new Orientation(m_curControlPoort, m_curPhotoPoort, this);
+        Orientation* ort = new Orientation(m_curControlPoints, m_curPhotoPoints, this);
         if (ort->relative())
         {
             m_orientation.insert(make_pair(key, ort));
@@ -219,8 +221,31 @@ void PHGProject::relativeOrientation()
     emit relativeFinished(false);
 }
 
-void PHGProject::abstractOrientation()
+void PHGProject::absoluteOrientation()
 {
 
+}
+
+void PHGProject::onestep()
+{
+    QString key = m_curControlPoints + m_curPhotoPoints;
+    map<QString, Onestep*>::iterator it;
+    for (it = m_onestep.begin(); it != m_onestep.end(); ++it)
+    {
+        if (it->first == key)
+            break;
+    }
+    if (it == m_onestep.end())
+    {
+        Onestep* ost = new Onestep(m_curControlPoints, m_curPhotoPoints, this);
+        if (ost->calculate())
+        {
+            m_onestep.insert(make_pair(key, ost));
+            m_curOnestep = key;
+            emit onestepFinished(true);
+            return;
+        }
+    }
+    emit onestepFinished(false);
 }
 

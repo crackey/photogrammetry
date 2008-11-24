@@ -274,7 +274,7 @@
      <x>0</x>
      <y>0</y>
      <width>801</width>
-     <height>20</height>
+     <height>31</height>
     </rect>
    </property>
    <widget class="QMenu" name="fileMenu" >
@@ -312,11 +312,18 @@
     </property>
     <addaction name="helpAboutAction" />
    </widget>
+   <widget class="QMenu" name="menuOneStep_O" >
+    <property name="title" >
+     <string>Calculate(&amp;C)</string>
+    </property>
+    <addaction name="onestepAction" />
+   </widget>
    <addaction name="fileMenu" />
    <addaction name="editMenu" />
    <addaction name="orientationMenu" />
-   <addaction name="intersectionMenu" />
    <addaction name="helpMenu" />
+   <addaction name="intersectionMenu" />
+   <addaction name="menuOneStep_O" />
   </widget>
   <widget class="QStatusBar" name="statusbar" />
   <action name="fileOpenAction" >
@@ -377,6 +384,11 @@
   <action name="helpAboutAction" >
    <property name="text" >
     <string>关于(&amp;A)</string>
+   </property>
+  </action>
+  <action name="onestepAction" >
+   <property name="text" >
+    <string>OneStep(&amp;O)</string>
    </property>
   </action>
  </widget>

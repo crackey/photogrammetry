@@ -9,6 +9,7 @@ class PhotoPoints;
 class ControlPoints;
 class Intersection;
 class Orientation;
+class Onestep;
 
 using namespace std;
 
@@ -36,13 +37,15 @@ public slots:
     void forwardIntersection();
     void backwardIntersection();
     void relativeOrientation();
-    void abstractOrientation();
+    void absoluteOrientation();
+    void onestep();
     
 signals:
     void fileLoaded(QString filepath);
     void phtAvailable(QString filepath);
     void backwardAvailable(bool);
     void forwardAvailable(bool);
+    void onestepAvailable(bool);
     void ctlAvailable(QString filepath);
     void backwardFinished(bool);
     void forwardFinished(bool);
@@ -50,14 +53,17 @@ signals:
     void relativeFinished(bool);
     void absoluteAvailable(bool);
     void absoluteFinished(bool);
+    void onestepFinished(bool);
 
 private:
     map<QString, PhotoPoints*> m_pht;
     map<QString, ControlPoints*> m_ctl;
     map<QString, Intersection*> m_intersection;
     map<QString, Orientation*> m_orientation;
+    map<QString, Onestep*> m_onestep;
     QString m_curOrientation;
     QString m_curIntersection;
+    QString m_curOnestep;
     QString m_curPhotoPoints;
     QString m_curControlPoints;
 };

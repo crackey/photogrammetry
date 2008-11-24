@@ -18,6 +18,42 @@ size_t ControlPoints::count() const
     return m_pointNum;
 }
 
+int ControlPoints::data(map<int, Point>* ctl, vector<int>* index) const
+{
+    int np = 0;
+    if (index != 0)
+    {
+        map<int, Point>::const_iterator itc;
+        int i;
+        for(i = 0, itc = m_points.begin(); 
+            i < index->size() && itc!=m_points.end();
+            )
+        {
+            if (index->at(i) == itc->first)
+            {
+                Point tp;
+                tp.x = itc->second.y * 1000;
+                tp.y = itc->second.x * 1000;
+                tp.z = itc->second.z * 1000;
+                ctl->insert(make_pair(itc->first, tp));
+                ++itc;
+                ++i;
+            }
+            else if (index->at(i) < itc->first)
+                ++i;
+            else
+                ++itc;
+        }
+    }
+    else
+    {
+        map<int, Point> tctl(m_points.begin(), m_points.end());
+        ctl->swap(tctl);
+    }
+    np = ctl->size();
+    return np;
+}
+
 int ControlPoints::data(double** xyzval, int** index) const
 {
     int np = 0;            // number of points retrived
