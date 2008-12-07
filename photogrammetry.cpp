@@ -55,6 +55,8 @@ Photogrammetry::Photogrammetry()
             ui.intersectionForwardAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(relativeAvailable(bool)), 
             ui.orientationRelativeAction, SLOT(setEnabled(bool)));
+    connect(m_prj, SIGNAL(relativeFinished(bool)), 
+            ui.orientationAbsoluteAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(onestepAvailable(bool)), 
             ui.onestepAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(phtAvailable(QString)), this, SLOT(syncFiducial(QString)));
@@ -98,7 +100,9 @@ void Photogrammetry::on_orientationRelativeAction_triggered()
 }
 
 void Photogrammetry::on_orientationAbsoluteAction_triggered()
-{}
+{
+    m_prj->absoluteOrientation();
+}
 
 void Photogrammetry::on_intersectionForwardAction_triggered()
 {

@@ -223,6 +223,23 @@ void PHGProject::relativeOrientation()
 
 void PHGProject::absoluteOrientation()
 {
+    QString key = m_curControlPoints + m_curPhotoPoints;
+    Orientation* orint = 0;
+    map<QString, Orientation*>::iterator it;
+    for (it = m_orientation.begin(); it != m_orientation.end(); ++it)
+    {
+        if (it->first == key)
+        {
+            orint = it->second;
+            break;
+        }
+    }
+    if (orint != 0 && orint->absolute())
+    {
+        emit absoluteFinished(true);
+        return;
+    }
+    emit absoluteFinished(false);
 
 }
 

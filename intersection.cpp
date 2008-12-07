@@ -84,6 +84,7 @@ bool Intersection::forward()
 {
     PHGProject* prj = (PHGProject*)parent();
     PhotoPoints* tpht = (prj->photoPoints(prj->curPhotoPoints()));
+#if 0
     map<int, PhotoPoint>* pht = &tpht->m_points;
     int np;
     np = pht->size();
@@ -112,14 +113,21 @@ bool Intersection::forward()
         phtdata[i*6+3] /= scalex;
         phtdata[i*6+4] /= scaley;
     }
+#endif
+    double focus;
+    double* phtdata = 0;
+    int np;
+    np = tpht->data(PhotoPoints::Left | PhotoPoints::Right, &focus, &phtdata, &m_index);
+
     qDebug() << "forward intersection photo data";
     for (int i = 0; i < tpht->count(); ++i)
     {
-        qDebug() << phtdata[i*6] << phtdata[i*6+1] << phtdata[i*6+2] << phtdata[i*6+3] << phtdata[i*6+4] << phtdata[i*6+5];
+        qDebug() << phtdata[i*4] << phtdata[i*4+1] << phtdata[i*4+2] << phtdata[i*4+3];
     }
-    m_forwardResult = new double[3*np];
 
-    int status = forward_impl(phtdata, m_orient, m_forwardResult, np);
+    m_forwardResult = new double[3*np];
+    int status = forward_impl(focus, phtdata, m_orient, m_forwardResult, np);
+
     qDebug() << "forward result:";
     for (int i = 0; i < np; ++i)
     {
@@ -242,7 +250,8 @@ int Intersection::backward_impl(double* pht, double* ctl, double* orient, double
     return 0;
 }
 
-int Intersection::forward_impl(double* p , /* photo data */
+int Intersection::forward_impl(double f,   /* focus */
+                               double* p , /* photo data */
                                double* o, /* orient elements */
                                double* out, /* output */
                                int n)/* number of points*/
@@ -260,10 +269,17 @@ int Intersection::forward_impl(double* p , /* photo data */
     B[2] = o[8] - o[2];
 
     double p1[3], p2[3];
+    double op1[3], op2[3];
     for (int i = 0; i < n; ++i)
     {
-        matrixMultiply(R1, p+6*i, p1, 3, 3, 1);
-        matrixMultiply(R2, p+6*i+3, p2, 3, 3, 1);
+        op1[0] = p[4*i];
+        op1[1] = p[4*i+1];
+        op1[2] = -f;
+        op2[0] = p[4*i+2];
+        op2[1] = p[4*i+3];
+        op2[2] = -f;
+        matrixMultiply(R1, op1, p1, 3, 3, 1);
+        matrixMultiply(R2, op2, p2, 3, 3, 1);
         double N1, N2;
         N1 = (B[0]*p2[2] - B[2]*p2[0]) / (p1[0]*p2[2] - p2[0]*p1[2]);
         N2 = (B[0]*p1[2] - B[2]*p1[0]) / (p1[0]*p2[2] - p2[0]*p1[2]);

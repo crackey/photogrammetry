@@ -15,6 +15,7 @@ public:
     bool calculate();
 
 private:
+    bool exact(double* x, int n);
     QString m_ctl;
     QString m_pht;
 };

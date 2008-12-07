@@ -26,7 +26,7 @@ private:
     void ma(double* a, double* ctl, double* pht, double f, double* orient, int index);
     bool orientNotExact(double* orient);
     int backward_impl(double* pht, double* ctl, double* orient, double f, int n);
-    int forward_impl(double* p , double* o, double* out, int n);
+    int forward_impl(double f, double* p , double* o, double* out, int n);
     int backwardData(double** ppht, double** pctl, double* focus, int side);
 
     double m_orient[12]; // orient elements, 0-5 for left photo, 6-11 for right

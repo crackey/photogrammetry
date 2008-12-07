@@ -23,6 +23,8 @@ private:
                          // should normally be 0, 6-11 for right photo
     static const double m_limit = 3e-5;
     double m_rol[5];    // relative orient elements.
+    double m_aol[7];    // absolute orient elements.
+    double* m_modelpoints;
     QString m_pht;
     QString m_ctl;
 };

@@ -15,6 +15,7 @@ Orientation::Orientation(QString ctl, QString pht, QObject* parent)
     memset(m_rol, 0, sizeof(double)*5);
     m_ctl = ctl;
     m_pht = pht;
+    m_modelpoints = 0;
 }
 
 Orientation::~Orientation()
@@ -91,9 +92,6 @@ bool Orientation::relative()
             a[5*i+2] = -X2 * Y2 * N2 / Z2;
             a[5*i+3] = -(Z2 + Y2*Y2/Z2) * N2;
             a[5*i+4] = X2 * N2;
-//            l[i] = 0;
-//            for (int j = 0; j < 5; ++j)
-//                l[i] += a[5*i+j]*ro[j];
             l[i] = Q;
         }
         double s[5];
@@ -114,6 +112,35 @@ bool Orientation::relative()
     qDebug() << "relative orienments:";
     for (int i = 0; i < 5; ++i)
         qDebug() << m_rol[i];
+
+    // calculate model points.
+    m_modelpoints = new double[np*3];
+    double* mp = m_modelpoints;
+    transform(R1, m_orient);
+    transform(R2, m_orient+6);
+    by = bx*m_rol[0];
+    bz = bx*m_rol[1];
+    for (int i = 0; i < np; ++i)
+    {
+        right[0] = data[4*i+2];
+        right[1] = data[4*i+3];
+        right[2] = -f;
+        left[0] = data[4*i];
+        left[1] = data[4*i+1];
+        left[2] = -f;
+        matrixMultiply(R1, left, tleft, 3, 3, 1);
+        matrixMultiply(R2, right, tright, 3, 3, 1);
+        N1 = (bx*Z2 - bz*X2) / (X1*Z2 - X2*Z1);
+        N2 = (bx*Z1 - bz*X1) / (X1*Z2 - X2*Z1);
+        mp[i*3] = N1 * X1;
+        mp[i*3+1] = 0.5*(N1*Y1+N2*Y2+by);
+        mp[i*3+2] = N1*Z1;
+    }
+    
+    qDebug() << "model points";
+    for (int i = 0; i < np; ++i)
+        qDebug() << mp[i*3] << mp[i*3+1] << mp[i*3+2];
+
     delete []a;
     delete []l;
     delete []data;
@@ -121,29 +148,80 @@ bool Orientation::relative()
 
 bool Orientation::absolute()
 {
-}
-
-#if 0
-int Orientation::photoData(double** data, double* f)
-{
+    int np;
     PHGProject* prj = (PHGProject*)parent();
     PhotoPoints* tpht = prj->photoPoints(m_pht);
-    np = tpht->data(PhotoPoints::Left | PhotoPoints::Right, f, data);
-    map<int, PhotoPoint> *pht = &tpht->m_points;
-    map<int, PhotoPoint>::iterator itp;
-    int np = tpht->count(); // number of points.
-    double* phtdata = new double[4*np];
-    int i = 0;
-    for (itp = pht->begin(); itp != pht->end(); ++itp, ++i)
+    int* phtindex = 0;
+    np = tpht->data(0, 0 , 0, &phtindex);
+    ControlPoints* tctl = prj->controlPoints(m_ctl);
+    double* ctldata = 0;
+    int* ctlindex = 0;
+    int nm;
+    int nc = tctl->data(&ctldata, &ctlindex);
+    nm = min(np, nc);
+    int* ctlidx = new int[nm];
+    int* modelidx = new int[nm];
+    int i, j;
+    nm = 0;
+    for (i = 0, j = 0; i<np && j<nc; )
     {
-        phtdata[i*4+0] = itp->second.x1 - 100;
-        phtdata[i*4+1] = 100 - itp->second.y1;
-        phtdata[i*4+2] = phtdata[i*4] - itp->second.x2;
-        phtdata[i*4+3] = phtdata[i*4+1] + 10 - itp->second.y2;
-    } 
-    *f = tpht->f();
-    *data = phtdata;
-    return np;
+        if (phtindex[i] == ctlindex[j])
+        {
+            ctlidx[nm] = i;
+            modelidx[nm] = j;
+            ++nm;
+            ++i;
+            ++j;
+        }
+        else if (phtindex[i] > ctlindex[j])
+            ++j;
+        else
+            ++i;
+    }
+    memset(m_aol, 0, sizeof(double)*7);
+    m_aol[0] = ctldata[1]*1000;
+    m_aol[1] = ctldata[0]*1000;
+    m_aol[3] = 10000;
+    double* a = new double[7*nm];
+    double* l = new double[nm];
+    double s[7];
+    double R[9];
+    memset(a, 0, sizeof(double)*7*nm);
+    int maxit = 30;
+    int itn = 0;
+    do
+    {
+        ++itn;
+        transform(R, m_aol+1);
+        for (i = 0; i < nm; ++i)
+        {
+            double pp[3]; // Xp, Yp, Zp
+            pp[0] = m_modelpoints[modelidx[i]];
+            pp[1] = m_modelpoints[modelidx[i]+1];
+            pp[2] = m_modelpoints[modelidx[i]+2];
+            double p[3]; // R0*[Xp,Yp,Zp]T
+            matrixMultiply(R, pp, p, 3, 3, 1);
+            l[3*i] = ctldata[ctlidx[i]*3+1]*1000 - p[0]*m_aol[3] - m_aol[0];
+            l[3*i+1] = ctldata[ctlidx[i]*3]*1000 - p[1]*m_aol[3] - m_aol[1];
+            l[3*i+2] = ctldata[ctlidx[i]*3+2]*1000 - p[2]*m_aol[3] - m_aol[2];
+            a[i*21] = 1;
+            a[i*21+3] = pp[0];
+            a[i*21+6] = -pp[1];
+            a[i*21+7] = 1;
+            a[i*21+10] = pp[2];
+            a[i*21+12] = -pp[2];
+            a[i*21+13] = pp[0];
+            a[i*21+16] = 1;
+            a[i*21+17] = pp[0];
+            a[i*21+18] = pp[1];
+            a[i*21+19] = pp[2];
+        }
+        lls(3*nm, 7, a, 1, l, s);
+        for (i = 0; i < 7; ++i)
+        {
+            m_aol[i] += l[i];
+        }
+    } while(itn < maxit || exact(l));
+    qDebug() << "Absolute orientation iterations: " << itn;
 }
-#endif
 

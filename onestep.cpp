@@ -115,6 +115,7 @@ bool Onestep::calculate()
     
     int maxit = 30;
     int itn = 0;
+#if 0
     do
     {
         // set matrix a
@@ -142,8 +143,10 @@ bool Onestep::calculate()
             a[nc+5] = -pht[i*4];
         }
     } while(!exact(l,12+3*nun) && itn<maxit);
+#endif
 }
 
+#if 0
 void Onestep::ma(vector<double> pht, double* p, double* o, int isc, double f, int n, int s)
 {
     int nc = n*3 + 12; // number of columns of matrix a
@@ -165,6 +168,7 @@ void Onestep::ma(vector<double> pht, double* p, double* o, int isc, double f, in
     a[nc+4] = -f*cos(o[5]) - pht[i*4+1] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
     a[nc+5] = -pht[i*4];
 }
+#endif
 
 bool Onestep::exact(double* x, int n)
 {
