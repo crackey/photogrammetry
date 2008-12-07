@@ -14,6 +14,11 @@ using namespace std;
 PHGProject::PHGProject(QObject* parent)
 : QObject(parent)
 {
+    m_pht = 0;
+    m_ctl = 0;
+    m_intersection = 0;
+    m_orientation = 0;
+    m_onestep = 0;
     connect(this, SIGNAL(fileLoaded(QString)), this, SLOT(setCurPhotoPoints(QString)));
     connect(this, SIGNAL(fileLoaded(QString)), this, SLOT(setCurControlPoints(QString)));
     connect(this, SIGNAL(fileLoaded(QString)), this, SLOT(setProjectStatus(QString)));
@@ -35,43 +40,43 @@ void PHGProject::openfile(QString filepath)
     {
         ControlPoints *pctl = new ControlPoints;
         in >> *pctl;
-        int ctlsize = m_ctl.size();
-        m_ctl.insert(make_pair(filepath, pctl));
-        if (ctlsize != m_ctl.size())
-            emit fileLoaded(filepath);
+        if (m_ctl != 0)
+            delete m_ctl;
+        m_ctl = pctl;
+        m_curControlPoints = filepath;
+        emit fileLoaded(filepath);
     }
     else if (filepath.endsWith(".pht", Qt::CaseInsensitive))
     {
         PhotoPoints *ppht = new PhotoPoints;
         in >> *ppht;
-        int phtsize = m_pht.size();
-        m_pht.insert(make_pair(filepath, ppht));
-        if (phtsize != m_pht.size())
-        {
-            emit fileLoaded(filepath);
-            int f = QMessageBox::question((QWidget*)this->parent(), tr("框标距"),
-                                          tr("是否从文件读入框标距？"), 
-                                          QMessageBox::Yes | QMessageBox::No);
-            double fdl[4] = {1.0, 1.0, 1.0, 1.0};
-            if (f == QMessageBox::Yes)
-            { 
-                QString fdlfile = QFileDialog::getOpenFileName((QWidget*)this->parent(), tr("打开"), ".", 
-                                                       tr("框标距文件 (*.fdl)"));
-                if (!filepath.isEmpty())
-                {
-                    fdlfile = QDir::toNativeSeparators(fdlfile);
-                    QByteArray ba1 = fdlfile.toLocal8Bit();
-                    const char *pw = ba1.data();
-                    ifstream in(pw);
-                    string tmpstr;
-                    in >> tmpstr >> fdl[0] >> fdl[1] >> tmpstr >> fdl[2] >> fdl[3];
-                }
-            }
-            else if (f == QMessageBox::No)
+        if (m_pht != 0)
+            delete m_pht;
+        m_pht = ppht;
+        m_curPhotoPoints = filepath;
+        emit fileLoaded(filepath);
+        int f = QMessageBox::question((QWidget*)this->parent(), tr("框标距"),
+            tr("是否从文件读入框标距？"), 
+            QMessageBox::Yes | QMessageBox::No);
+        double fdl[4] = {1.0, 1.0, 1.0, 1.0};
+        if (f == QMessageBox::Yes)
+        { 
+            QString fdlfile = QFileDialog::getOpenFileName((QWidget*)this->parent(), tr("打开"), ".", 
+                tr("框标距文件 (*.fdl)"));
+            if (!filepath.isEmpty())
             {
+                fdlfile = QDir::toNativeSeparators(fdlfile);
+                QByteArray ba1 = fdlfile.toLocal8Bit();
+                const char *pw = ba1.data();
+                ifstream in(pw);
+                string tmpstr;
+                in >> tmpstr >> fdl[0] >> fdl[1] >> tmpstr >> fdl[2] >> fdl[3];
             }
-            setFiducial(filepath, fdl);
         }
+        else if (f == QMessageBox::No)
+        {
+        }
+        setFiducial(filepath, fdl);
     }
     else
     {}
@@ -79,17 +84,17 @@ void PHGProject::openfile(QString filepath)
 
 PhotoPoints* PHGProject::photoPoints(QString key)
 {
-    return m_pht.find(key)->second;
+    return m_pht;
 }
 
 ControlPoints* PHGProject::controlPoints(QString key)
 {
-    return m_ctl.find(key)->second;
+    return m_ctl;
 }
 
 Intersection* PHGProject::intersection(QString key)
 {
-    return m_intersection.find(key)->second;
+    return m_intersection;
 }
 
 QString PHGProject::curPhotoPoints()
@@ -153,18 +158,7 @@ void PHGProject::addIntersection(QString key)
 
 void PHGProject::forwardIntersection()
 {
-    QString key = m_curControlPoints + m_curPhotoPoints;
-    Intersection* ints = 0;
-    map<QString, Intersection*>::iterator it;
-    for (it = m_intersection.begin(); it != m_intersection.end(); ++it)
-    {
-        if (it->first == key)
-        {
-            ints = it->second;
-            break;
-        }
-    }
-    if (ints != 0 && ints->forward())
+    if (m_intersection != 0 && m_intersection->forward())
     {
         emit forwardFinished(true);
     }
@@ -175,64 +169,40 @@ void PHGProject::forwardIntersection()
 void PHGProject::backwardIntersection()
 {
     QString key = m_curControlPoints + m_curPhotoPoints;
-    map<QString, Intersection*>::iterator it;
-    for (it = m_intersection.begin(); it != m_intersection.end(); ++it)
+    if (m_intersection != 0)
+        delete m_intersection;
+
+    m_intersection = new Intersection(m_curControlPoints, m_curPhotoPoints, this);
+    if (m_intersection->backward())
     {
-        if (it->first == key)
-            break;
+        m_curIntersection = key;
+        emit backwardFinished(true);
     }
-    if (it == m_intersection.end())
-    {
-        Intersection* ints = new Intersection(m_curControlPoints, m_curPhotoPoints, this);
-        if (ints->backward())
-        {
-            m_intersection.insert(make_pair(key, ints));
-            m_curIntersection = key;
-            emit backwardFinished(true);
-        }
-        else
-            emit backwardFinished(false);
-    }
+    else
+        emit backwardFinished(false);
+
 }
 
 void PHGProject::relativeOrientation()
 {
     QString key = m_curControlPoints + m_curPhotoPoints;
-    map<QString, Orientation*>::iterator it;
-    for (it = m_orientation.begin(); it != m_orientation.end(); ++it)
-    {
-        if (it->first == key)
-            break;
-    }
-    if (it == m_orientation.end())
-    {
-        Orientation* ort = new Orientation(m_curControlPoints, m_curPhotoPoints, this);
-        if (ort->relative())
-        {
-            m_orientation.insert(make_pair(key, ort));
-            m_curOrientation = key;
-            emit relativeFinished(true);
-        }
-        else
-            emit relativeFinished(false);
-    }
 
+    if (m_orientation != 0)
+        delete m_orientation;
+
+    m_orientation = new Orientation(m_curControlPoints, m_curPhotoPoints, this);
+    if (m_orientation->relative())
+    {
+        m_curOrientation = key;
+        emit relativeFinished(true);
+    }
+    else
+        emit relativeFinished(false);
 }
 
 void PHGProject::absoluteOrientation()
 {
-    QString key = m_curControlPoints + m_curPhotoPoints;
-    Orientation* orint = 0;
-    map<QString, Orientation*>::iterator it;
-    for (it = m_orientation.begin(); it != m_orientation.end(); ++it)
-    {
-        if (it->first == key)
-        {
-            orint = it->second;
-            break;
-        }
-    }
-    if (orint != 0 && orint->absolute())
+    if (m_orientation != 0 && m_orientation->absolute())
     {
         emit absoluteFinished(true);
         return;
@@ -244,23 +214,14 @@ void PHGProject::absoluteOrientation()
 void PHGProject::onestep()
 {
     QString key = m_curControlPoints + m_curPhotoPoints;
-    map<QString, Onestep*>::iterator it;
-    for (it = m_onestep.begin(); it != m_onestep.end(); ++it)
+    if (m_onestep != 0)
+        delete m_onestep;
+    Onestep* m_onestep = new Onestep(m_curControlPoints, m_curPhotoPoints, this);
+    if (m_onestep->calculate())
     {
-        if (it->first == key)
-            break;
+        m_curOnestep = key;
+        emit onestepFinished(true);
     }
-    if (it == m_onestep.end())
-    {
-        Onestep* ost = new Onestep(m_curControlPoints, m_curPhotoPoints, this);
-        if (ost->calculate())
-        {
-            m_onestep.insert(make_pair(key, ost));
-            m_curOnestep = key;
-            emit onestepFinished(true);
-            return;
-        }
-    }
-    emit onestepFinished(false);
+    else 
+        emit onestepFinished(false);
 }
-

@@ -56,11 +56,11 @@ signals:
     void onestepFinished(bool);
 
 private:
-    map<QString, PhotoPoints*> m_pht;
-    map<QString, ControlPoints*> m_ctl;
-    map<QString, Intersection*> m_intersection;
-    map<QString, Orientation*> m_orientation;
-    map<QString, Onestep*> m_onestep;
+    PhotoPoints* m_pht;
+    ControlPoints* m_ctl;
+    Intersection*  m_intersection;
+    Orientation* m_orientation;
+    Onestep* m_onestep;
     QString m_curOrientation;
     QString m_curIntersection;
     QString m_curOnestep;

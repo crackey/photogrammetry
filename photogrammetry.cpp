@@ -16,30 +16,8 @@ Photogrammetry::Photogrammetry()
 {
     m_orientation = false;
     m_intersection = false;
- 
-    for (int i = 0; i < 12; ++i)
-        m_orient[i] = 0.0;
     ui.setupUi(this);
-
     m_prj = new PHGProject(0);
-    /*
-    QStandardItemModel *model = new QStandardItemModel;
-    QStandardItem *parentItem = model->invisibleRootItem();
-    for (int i = 0; i < 4; ++i) 
-    {
-        QStandardItem *item = new QStandardItem(QString("item %0").arg(i));
-        parentItem->appendRow(item);
-    }
-    */
-
-    // setup the project model/view
-    ProjectModel::Node *root = new ProjectModel::Node(ProjectModel::Node::Root, tr("PHGProject"));
-    root->children.append(new ProjectModel::Node(ProjectModel::Node::CTL, tr("控制点数据"), root));
-    root->children.append(new ProjectModel::Node(ProjectModel::Node::PHT, tr("相片数据"), root));
-    ProjectModel *model = new ProjectModel(root, this);
-    ui.projectView->setModel(model);
-    //connect(ui.projectView, SIGNAL(clicked(QModelIndex)),
-    //        this, SLOT(clicked(QModelIndex)));
 
     PhotoPointsModel* phtptsModel = new PhotoPointsModel(0, this);
     ui.photoPointsView->setModel(phtptsModel);
@@ -47,7 +25,6 @@ Photogrammetry::Photogrammetry()
     ui.controlPointsView->setModel(ctlptsModel);
 
     connect(this, SIGNAL(fileopen(QString)), m_prj, SLOT(openfile(QString)));
-    connect(m_prj, SIGNAL(fileLoaded(QString)), model, SLOT(addItem(QString)));
     connect(m_prj, SIGNAL(fileLoaded(QString)), this, SLOT(addView(QString)));
     connect(m_prj, SIGNAL(backwardAvailable(bool)), 
             ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
