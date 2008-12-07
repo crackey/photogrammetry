@@ -70,7 +70,7 @@ QVariant ControlPointsModel::headerData(int section, Qt::Orientation orientation
         switch (section)
         {
         case 0:
-            return tr("Point Number");
+            return tr("µãºÅ");
         case 1:
             return tr("X");
         case 2:

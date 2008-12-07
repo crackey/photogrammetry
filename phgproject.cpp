@@ -50,13 +50,13 @@ void PHGProject::openfile(QString filepath)
         {
             emit fileLoaded(filepath);
             int f = QMessageBox::question((QWidget*)this->parent(), tr("框标距"),
-                                          tr("Open a fiducial file?"), 
+                                          tr("是否从文件读入框标距？"), 
                                           QMessageBox::Yes | QMessageBox::No);
             double fdl[4] = {1.0, 1.0, 1.0, 1.0};
             if (f == QMessageBox::Yes)
             { 
-                QString fdlfile = QFileDialog::getOpenFileName((QWidget*)this->parent(), tr("Open File"), ".", 
-                                                       tr("Distance of fiducial marks (*.fdl)"));
+                QString fdlfile = QFileDialog::getOpenFileName((QWidget*)this->parent(), tr("打开"), ".", 
+                                                       tr("框标距文件 (*.fdl)"));
                 if (!filepath.isEmpty())
                 {
                     fdlfile = QDir::toNativeSeparators(fdlfile);
@@ -167,9 +167,9 @@ void PHGProject::forwardIntersection()
     if (ints != 0 && ints->forward())
     {
         emit forwardFinished(true);
-        return;
     }
-    emit forwardFinished(false);
+    else
+        emit forwardFinished(false);
 }
 
 void PHGProject::backwardIntersection()
@@ -189,17 +189,14 @@ void PHGProject::backwardIntersection()
             m_intersection.insert(make_pair(key, ints));
             m_curIntersection = key;
             emit backwardFinished(true);
-            return;
         }
+        else
+            emit backwardFinished(false);
     }
-    emit backwardFinished(false);
 }
 
 void PHGProject::relativeOrientation()
 {
-    //    Orientation* orient = new Orientation(m_curControlPoints, m_curPhotoPoints, this);
-    //    orient->relative();
-
     QString key = m_curControlPoints + m_curPhotoPoints;
     map<QString, Orientation*>::iterator it;
     for (it = m_orientation.begin(); it != m_orientation.end(); ++it)
@@ -215,10 +212,11 @@ void PHGProject::relativeOrientation()
             m_orientation.insert(make_pair(key, ort));
             m_curOrientation = key;
             emit relativeFinished(true);
-            return;
         }
+        else
+            emit relativeFinished(false);
     }
-    emit relativeFinished(false);
+
 }
 
 void PHGProject::absoluteOrientation()

@@ -26,32 +26,32 @@
      </property>
      <row>
       <property name="text" >
-       <string>Xs</string>
+       <string>Xs(mm)</string>
       </property>
      </row>
      <row>
       <property name="text" >
-       <string>Ys</string>
+       <string>Ys(mm)</string>
       </property>
      </row>
      <row>
       <property name="text" >
-       <string>Zs</string>
+       <string>Zs(mm)</string>
       </property>
      </row>
      <row>
       <property name="text" >
-       <string>φ</string>
+       <string>φ(°)</string>
       </property>
      </row>
      <row>
       <property name="text" >
-       <string>ω</string>
+       <string>ω(°)</string>
       </property>
      </row>
      <row>
       <property name="text" >
-       <string>κ</string>
+       <string>κ(°)</string>
       </property>
      </row>
      <column>
@@ -82,17 +82,17 @@
      </column>
      <column>
       <property name="text" >
-       <string>X</string>
+       <string>X(M)</string>
       </property>
      </column>
      <column>
       <property name="text" >
-       <string>Y</string>
+       <string>Y(M)</string>
       </property>
      </column>
      <column>
       <property name="text" >
-       <string>Z</string>
+       <string>Z(M)</string>
       </property>
      </column>
     </widget>

@@ -34,8 +34,8 @@ Photogrammetry::Photogrammetry()
 
     // setup the project model/view
     ProjectModel::Node *root = new ProjectModel::Node(ProjectModel::Node::Root, tr("PHGProject"));
-    root->children.append(new ProjectModel::Node(ProjectModel::Node::CTL, tr("Control Points"), root));
-    root->children.append(new ProjectModel::Node(ProjectModel::Node::PHT, tr("Photo Points"), root));
+    root->children.append(new ProjectModel::Node(ProjectModel::Node::CTL, tr("控制点数据"), root));
+    root->children.append(new ProjectModel::Node(ProjectModel::Node::PHT, tr("相片数据"), root));
     ProjectModel *model = new ProjectModel(root, this);
     ui.projectView->setModel(model);
     //connect(ui.projectView, SIGNAL(clicked(QModelIndex)),
@@ -75,10 +75,9 @@ Photogrammetry::~Photogrammetry()
 void Photogrammetry::on_fileOpenAction_triggered()
 {
     QString filepath;
-    filepath = QFileDialog::getOpenFileName(this, tr("Open File"), ".", 
-        tr("Control points (*.ctl);;"
-           "Photo points (*.pht);;"
-           "Distance of fiducial marks (*.fdl)"));
+    filepath = QFileDialog::getOpenFileName(this, tr("打开"), ".", 
+        tr("控制点数据 (*.ctl);;"
+           "相片数据 (*.pht);;"));
     if (!filepath.isEmpty())
         emit fileopen(filepath);
 }
@@ -156,7 +155,7 @@ void Photogrammetry::updateBackwardView(bool t)
     {
         QTabWidget* tab = ui.tabWidget;
         QString tabLabel;
-        tabLabel = tr("intersection");
+        tabLabel = tr("交会");
         IntersectionWidget* intsWidget = 0;
         for (int i = 0; i < tab->count(); ++i)
         {
@@ -171,6 +170,7 @@ void Photogrammetry::updateBackwardView(bool t)
             intsWidget = new IntersectionWidget(m_prj->intersection(m_prj->curIntersection()));
             tab->addTab(intsWidget,  tabLabel);
         }
+        intsWidget->setIntersection(m_prj->intersection(m_prj->curIntersection()));
         intsWidget->updateBackward();
         tab->setCurrentWidget(intsWidget);
     }
@@ -182,7 +182,7 @@ void Photogrammetry::updateForwardView(bool t)
     {
         QTabWidget* tab = ui.tabWidget;
         QString tabLabel;
-        tabLabel = tr("intersection");
+        tabLabel = tr("交会");
         IntersectionWidget* intsWidget = 0;
         for (int i = 0; i < tab->count(); ++i)
         {

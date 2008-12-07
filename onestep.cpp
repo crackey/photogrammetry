@@ -144,6 +144,7 @@ bool Onestep::calculate()
         }
     } while(!exact(l,12+3*nun) && itn<maxit);
 #endif
+    return true;
 }
 
 #if 0

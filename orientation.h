@@ -21,7 +21,7 @@ private:
 //    int photoData(double** data, double* f);
     double m_orient[12]; // 0-5 was orient elements for left photo which
                          // should normally be 0, 6-11 for right photo
-    static const double m_limit = 3e-5;
+    double m_limit;
     double m_rol[5];    // relative orient elements.
     double m_aol[7];    // absolute orient elements.
     double* m_modelpoints;

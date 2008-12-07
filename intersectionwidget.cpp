@@ -75,15 +75,25 @@ void IntersectionWidget::updateForward()
             item->setData(Qt::DisplayRole, QString("%1").arg(index[i]));
             forwardTable->setItem(i, 0, item);
     }
-    for (int i = 1; i < 4; ++i)
-    {
+    //for (int i = 1; i < 4; ++i)
+    //{
         for (int j = 0; j < np; ++j)
         {
             item = new QTableWidgetItem();
             item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-            item->setData(Qt::DisplayRole, QString("%1").arg(data[3*j+i-1]/1000.0, 0, 'f', 3));
-            forwardTable->setItem(j, i, item);
+            item->setData(Qt::DisplayRole, QString("%1").arg(data[3*j+1]/1000.0, 0, 'f', 3));
+            forwardTable->setItem(j, 1, item);
+
+            item = new QTableWidgetItem();
+            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+            item->setData(Qt::DisplayRole, QString("%1").arg(data[3*j]/1000.0, 0, 'f', 3));
+            forwardTable->setItem(j, 2, item);
+
+            item = new QTableWidgetItem();
+            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+            item->setData(Qt::DisplayRole, QString("%1").arg(data[3*j+2]/1000.0, 0, 'f', 3));
+            forwardTable->setItem(j, 3, item);
         }
-    }
+    //}
 }
 
