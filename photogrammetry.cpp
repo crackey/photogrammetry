@@ -8,6 +8,7 @@
 #include "photopointsmodel.h"
 #include "controlpointsmodel.h"
 #include "intersectionwidget.h"
+#include "orientationwidget.h"
 //#include "intersection.h"
 
 using namespace std;
@@ -32,13 +33,15 @@ Photogrammetry::Photogrammetry()
             ui.intersectionForwardAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(relativeAvailable(bool)), 
             ui.orientationRelativeAction, SLOT(setEnabled(bool)));
-    connect(m_prj, SIGNAL(relativeFinished(bool)), 
+    connect(m_prj, SIGNAL(absoluteAvailable(bool)), 
             ui.orientationAbsoluteAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(onestepAvailable(bool)), 
             ui.onestepAction, SLOT(setEnabled(bool)));
     connect(m_prj, SIGNAL(phtAvailable(QString)), this, SLOT(syncFiducial(QString)));
     connect(m_prj, SIGNAL(backwardFinished(bool)), this, SLOT(updateBackwardView(bool)));
     connect(m_prj, SIGNAL(forwardFinished(bool)), this, SLOT(updateForwardView(bool)));
+    connect(m_prj, SIGNAL(relativeFinished(bool)), this, SLOT(updateRelativeView(bool)));
+    connect(m_prj, SIGNAL(absoluteFinished(bool)), this, SLOT(updateAbsoluteView(bool)));
 //    connect(this, SIGNAL(backwardAvailable(bool)), ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
 //    connect(this, SIGNAL(forwardAvailable(bool)), ui.intersectionForwardAction, SLOT(setEnabled(bool)));
 }
@@ -176,5 +179,57 @@ void Photogrammetry::updateForwardView(bool t)
         }
     }
 }
+
+void Photogrammetry::updateRelativeView(bool t)
+{
+        if (t)
+    {
+        QTabWidget* tab = ui.tabWidget;
+        QString tabLabel;
+        tabLabel = tr("定向");
+        OrientationWidget* ortWidget = 0;
+        for (int i = 0; i < tab->count(); ++i)
+        {
+            if (tabLabel == tab->tabText(i))
+            {
+                ortWidget = (OrientationWidget*)tab->widget(i);
+                break;
+            }
+        }
+        if (ortWidget == 0)
+        {
+            ortWidget = new OrientationWidget(m_prj->orientation(m_prj->curOrientation()));
+            tab->addTab(ortWidget,  tabLabel);
+        }
+        ortWidget->setOrientation(m_prj->orientation(m_prj->curOrientation()));
+        ortWidget->updateRelative();
+        tab->setCurrentWidget(ortWidget);
+    }
+}
+
+void Photogrammetry::updateAbsoluteView(bool t)
+{
+   if (t)
+    {
+        QTabWidget* tab = ui.tabWidget;
+        QString tabLabel;
+        tabLabel = tr("定向");
+        OrientationWidget* ortWidget = 0;
+        for (int i = 0; i < tab->count(); ++i)
+        {
+            if (tabLabel == tab->tabText(i))
+            {
+                ortWidget = (OrientationWidget*)tab->widget(i);
+                break;
+            }
+        }
+        if (ortWidget != 0)
+        {
+            ortWidget->updateAbsolute();
+            tab->setCurrentWidget(ortWidget);
+        }
+    }
+}
+
 // end of public slots
 

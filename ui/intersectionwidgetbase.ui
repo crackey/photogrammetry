@@ -5,96 +5,111 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>516</width>
-    <height>460</height>
+    <width>553</width>
+    <height>439</height>
    </rect>
   </property>
   <property name="windowTitle" >
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout" >
+  <layout class="QHBoxLayout" name="horizontalLayout_2" >
    <item>
-    <widget class="QTableWidget" name="orientTable" >
-     <property name="gridStyle" >
-      <enum>Qt::SolidLine</enum>
+    <widget class="QSplitter" name="splitter" >
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
      </property>
-     <property name="rowCount" >
-      <number>6</number>
-     </property>
-     <property name="columnCount" >
-      <number>2</number>
-     </property>
-     <row>
-      <property name="text" >
-       <string>Xs(mm)</string>
+     <widget class="QWidget" name="" >
+      <layout class="QHBoxLayout" name="horizontalLayout" >
+       <item>
+        <widget class="QTableWidget" name="orientTable" >
+         <property name="sizePolicy" >
+          <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="gridStyle" >
+          <enum>Qt::SolidLine</enum>
+         </property>
+         <property name="rowCount" >
+          <number>6</number>
+         </property>
+         <property name="columnCount" >
+          <number>2</number>
+         </property>
+         <row>
+          <property name="text" >
+           <string>Xs(mm)</string>
+          </property>
+         </row>
+         <row>
+          <property name="text" >
+           <string>Ys(mm)</string>
+          </property>
+         </row>
+         <row>
+          <property name="text" >
+           <string>Zs(mm)</string>
+          </property>
+         </row>
+         <row>
+          <property name="text" >
+           <string>φ(°)</string>
+          </property>
+         </row>
+         <row>
+          <property name="text" >
+           <string>ω(°)</string>
+          </property>
+         </row>
+         <row>
+          <property name="text" >
+           <string>κ(°)</string>
+          </property>
+         </row>
+         <column>
+          <property name="text" >
+           <string>左相片</string>
+          </property>
+         </column>
+         <column>
+          <property name="text" >
+           <string>右相片</string>
+          </property>
+         </column>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QTableWidget" name="forwardTable" >
+      <property name="rowCount" >
+       <number>1</number>
       </property>
-     </row>
-     <row>
-      <property name="text" >
-       <string>Ys(mm)</string>
+      <property name="columnCount" >
+       <number>4</number>
       </property>
-     </row>
-     <row>
-      <property name="text" >
-       <string>Zs(mm)</string>
-      </property>
-     </row>
-     <row>
-      <property name="text" >
-       <string>φ(°)</string>
-      </property>
-     </row>
-     <row>
-      <property name="text" >
-       <string>ω(°)</string>
-      </property>
-     </row>
-     <row>
-      <property name="text" >
-       <string>κ(°)</string>
-      </property>
-     </row>
-     <column>
-      <property name="text" >
-       <string>左相片</string>
-      </property>
-     </column>
-     <column>
-      <property name="text" >
-       <string>右相片</string>
-      </property>
-     </column>
-    </widget>
-   </item>
-   <item>
-    <widget class="QTableWidget" name="forwardTable" >
-     <property name="rowCount" >
-      <number>1</number>
-     </property>
-     <property name="columnCount" >
-      <number>4</number>
-     </property>
-     <row/>
-     <column>
-      <property name="text" >
-       <string>点号</string>
-      </property>
-     </column>
-     <column>
-      <property name="text" >
-       <string>X(M)</string>
-      </property>
-     </column>
-     <column>
-      <property name="text" >
-       <string>Y(M)</string>
-      </property>
-     </column>
-     <column>
-      <property name="text" >
-       <string>Z(M)</string>
-      </property>
-     </column>
+      <row/>
+      <column>
+       <property name="text" >
+        <string>点号</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>X(M)</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Y(M)</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Z(M)</string>
+       </property>
+      </column>
+     </widget>
     </widget>
    </item>
   </layout>

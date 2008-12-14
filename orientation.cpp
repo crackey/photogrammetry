@@ -11,16 +11,36 @@
 Orientation::Orientation(QString ctl, QString pht, QObject* parent)
     : QObject(parent)
 {
-    memset(m_orient, 0, sizeof(double)*12);
-    memset(m_rol, 0, sizeof(double)*5);
+
     m_ctl = ctl;
     m_pht = pht;
     m_modelpoints = 0;
+    m_index = 0;
     m_limit = 3e-5;
+    m_result = 0;
+    m_rol = new double[5];
+    m_rols = new double[5];
+    memset(m_rols, 0, sizeof(double)*5);
+    memset(m_rol, 0, sizeof(double)*5); 
+    memset(m_orient, 0, sizeof(double)*12);
 }
 
 Orientation::~Orientation()
 {}
+
+int Orientation::result(int** index, double** data) const
+{
+    *index = m_index;
+    *data = m_result;
+    return m_phtnum;
+}
+
+int Orientation::relativeOrientElements(double** data, double** s) const
+{
+    *s = m_rols;
+    *data = m_rol;
+    return 5;
+}
 
 bool Orientation::exact(double* data)
 {
@@ -95,8 +115,7 @@ bool Orientation::relative()
             a[5*i+4] = X2 * N2;
             l[i] = Q;
         }
-        double s[5];
-        lls(np, 5, a, 1, l, s);
+        lls(np, 5, a, 1, l, m_rols);
         for (int i = 0; i < 5; ++i)
         {
             m_rol[i] += l[i];
@@ -123,6 +142,7 @@ bool Orientation::relative()
     bz = bx*m_rol[1];
     for (int i = 0; i < np; ++i)
     {
+        double m = 10000;
         right[0] = data[4*i+2];
         right[1] = data[4*i+3];
         right[2] = -f;
@@ -133,9 +153,9 @@ bool Orientation::relative()
         matrixMultiply(R2, right, tright, 3, 3, 1);
         N1 = (bx*Z2 - bz*X2) / (X1*Z2 - X2*Z1);
         N2 = (bx*Z1 - bz*X1) / (X1*Z2 - X2*Z1);
-        mp[i*3] = N1 * X1;
-        mp[i*3+1] = 0.5*(N1*Y1+N2*Y2+by);
-        mp[i*3+2] = N1*Z1;
+        mp[i*3] = m * N1 * X1;
+        mp[i*3+1] = m * 0.5*(N1*Y1+N2*Y2+by);
+        mp[i*3+2] = m * f + m*N1*Z1;
     }
     
     qDebug() << "model points";
@@ -155,6 +175,8 @@ bool Orientation::absolute()
     PhotoPoints* tpht = prj->photoPoints(m_pht);
     int* phtindex = 0;
     np = tpht->data(0, 0 , 0, &phtindex);
+    m_phtnum = np;
+    m_index = phtindex;
     ControlPoints* tctl = prj->controlPoints(m_ctl);
     double* ctldata = 0;
     int* ctlindex = 0;
@@ -181,56 +203,14 @@ bool Orientation::absolute()
             ++i;
     }
     memset(m_aol, 0, sizeof(double)*7);
-    //m_aol[0] = ctldata[1]*1000;
-    //m_aol[1] = ctldata[0]*1000;
-
+    m_aol[3] = 1;
     double* a = new double[7*3*nm];
+    memset(a, 0, sizeof(double)*21*nm);
     double* l = new double[3*nm];
     double s[7];
     double R[9];
-    memset(a, 0, sizeof(double)*7*nm);
     int maxit = 30;
     int itn = 0;
-    double tPg[3], Pg[3];
-    memset(tPg, 0, sizeof(double)*3);
-    memset(Pg, 0, sizeof(double)*3);
-    for (i = 0; i < nm; ++i)
-    {
-        tPg[0] += ctldata[ctlidx[i]*3+1]*1000;
-        tPg[1] += ctldata[ctlidx[i]*3]*1000;
-        tPg[2] += ctldata[ctlidx[i]*3+2]*1000;
-        Pg[0] += m_modelpoints[modelidx[i]*3];
-        Pg[1] += m_modelpoints[modelidx[i]*3+1];
-        Pg[2] += m_modelpoints[modelidx[i]*3+2];
-    }
-    for (i = 0; i < 3; ++i)
-    {
-        tPg[i] /= nm;
-        Pg[i] /= nm;
-    }
-    memset(tPg, 0, sizeof(double)*3);
-    memset(Pg, 0, sizeof(double)*3);
-    double tpc[6];
-    double tpm[6];
-    tpc[0] = ctldata[modelidx[0]*3+1]*1000 - tPg[0];
-    tpc[1] = ctldata[modelidx[0]*3]*1000 - tPg[1];
-    tpc[2] = ctldata[modelidx[0]*3+2]*1000 - tPg[2];
-    tpc[3] = ctldata[modelidx[1]*3+1]*1000 - tPg[0];
-    tpc[4] = ctldata[modelidx[1]*3]*1000 - tPg[1];
-    tpc[5] = ctldata[modelidx[1]*3+2]*1000 - tPg[2];
-    tpm[0] = m_modelpoints[modelidx[0]*3] - Pg[0];
-    tpm[1] = m_modelpoints[modelidx[0]*3+1] - Pg[1];
-    tpm[2] = m_modelpoints[modelidx[0]*3+2] - Pg[2];
-    tpm[3] = m_modelpoints[modelidx[1]*3] - Pg[0];
-    tpm[4] = m_modelpoints[modelidx[1]*3+1] - Pg[1];
-    tpm[5] = m_modelpoints[modelidx[1]*3+2] - Pg[2];
-    m_aol[3] = sqrt((tpc[0]-tpc[3])*(tpc[0]-tpc[3]) + (tpc[1]-tpc[4])*(tpc[1]-tpc[4]) + (tpc[2]-tpc[5])*(tpc[2]-tpc[5]))
-               / sqrt((tpm[0]-tpm[3])*(tpm[0]-tpm[3]) + (tpm[1]-tpm[4])*(tpm[1]-tpm[4]) + (tpm[2]-tpm[5])*(tpm[2]-tpm[5]));
-#if 1  
-    m_aol[0] = (tpc[0] - tpm[0]*m_aol[3]);
-    m_aol[1] = (tpc[1] - tpm[1]*m_aol[3]);
-    m_aol[2] = (tpc[2] - tpm[2]*m_aol[3]);
-#endif 
     do
     {
         ++itn;
@@ -238,15 +218,15 @@ bool Orientation::absolute()
         for (i = 0; i < nm; ++i)
         {
             double pp[3]; // Xp, Yp, Zp
-            pp[0] = m_modelpoints[modelidx[i]*3] - Pg[0];
-            pp[1] = m_modelpoints[modelidx[i]*3+1] - Pg[1];
-            pp[2] = m_modelpoints[modelidx[i]*3+2] - Pg[2];
+            pp[0] = m_modelpoints[modelidx[i]*3];
+            pp[1] = m_modelpoints[modelidx[i]*3+1];
+            pp[2] = m_modelpoints[modelidx[i]*3+2];
             double p[3]; // R0*[Xp,Yp,Zp]T
             matrixMultiply(R, pp, p, 3, 3, 1);
             double tp[3];  // Xtp, Ytp, Ztp
-            tp[0] = ctldata[ctlidx[i]*3+1]*1000 - tPg[0];
-            tp[1] = ctldata[ctlidx[i]*3]*1000 - tPg[1];
-            tp[2] = ctldata[ctlidx[i]*3+2]*1000 - tPg[2];
+            tp[0] = ctldata[ctlidx[i]*3+1]*1000;
+            tp[1] = ctldata[ctlidx[i]*3]*1000;
+            tp[2] = ctldata[ctlidx[i]*3+2]*1000;
             l[3*i] = tp[0] - p[0]*m_aol[3] - m_aol[0];
             l[3*i+1] = tp[1] - p[1]*m_aol[3] - m_aol[1];
             l[3*i+2] = tp[2] - p[2]*m_aol[3] - m_aol[2];
@@ -263,13 +243,39 @@ bool Orientation::absolute()
             a[i*21+18] = pp[0];
             a[i*21+19] = pp[1];
         }
+        //for (int ii = 0; ii < 3*nm; ++ii)
+        //    qDebug() << a[ii*7] << a[ii*7+1] << a[ii*7+2] << a[ii*7+3] << a[ii*7+4] 
+        //<< a[ii*7+5] << a[ii*7+6];
         lls(3*nm, 7, a, 1, l, s);
         for (i = 0; i < 7; ++i)
         {
             m_aol[i] += l[i];
         }
-    } while(itn < maxit || exact(l));
+    } while(itn < maxit && !exact(l));
     qDebug() << "Absolute orientation iterations: " << itn;
+
+    m_result = new double[3*np];
+    for (i = 0; i < np; ++i)
+    {
+        transform(R, m_aol+1);
+        double pp[3];
+        pp[0] = m_modelpoints[i*3];
+        pp[1] = m_modelpoints[i*3+1];
+        pp[2] = m_modelpoints[i*3+2];
+        double p[3]; // R0*[Xp,Yp,Zp]T
+        matrixMultiply(R, pp, p, 3, 3, 1);
+        m_result[i*3] = m_aol[3]*p[0]+m_aol[0];
+        m_result[i*3+1] = m_aol[3]*p[1]+m_aol[1];
+        m_result[i*3+2] = m_aol[3]*p[2]+m_aol[2];
+        qDebug() << m_result[i*3+1]/1000 << m_result[i*3]/1000 << m_result[i*3+2]/1000;
+    }
+    delete []a;
+    delete []l;
+   // delete []phtindex;
+    delete []ctlindex;
+    delete []ctldata;
+    delete []ctlidx;
+    delete []modelidx;
     return true;
 }
 

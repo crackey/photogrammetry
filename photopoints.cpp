@@ -173,6 +173,69 @@ int PhotoPoints::data(int flag, double* focus, double** xyval, int** index) cons
     return np;
 }
 
+#if 0
+int PhotoPoints::data(int flag, double* fodus, PhotoPoint** pdata) const
+{
+    int np = 0;        // number of points retrived.
+    if (focus != 0)
+        *focus = m_focus;
+    map<int, PhotoPoint>::const_iterator itp;
+    int i;
+    if (pdata != 0)  // retrive x,y values
+    {
+        PhotoPoint* phtdata;
+        double scalex;
+        double scaley;
+        scalex = m_fiducial[2]/m_fiducial[0];
+        scaley = m_fiducial[3]/m_fiducial[1];
+        np = m_points.size();
+        switch (flag)
+        {
+        case Left:
+            phtdata = new PhotoPoint[np];
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                phtdata[i*2] = (itp->second.x1 - 100)*scalex;
+                phtdata[i*2+1] = (100 - itp->second.y1)*scaley;
+            } 
+            break;
+        case Right:
+            phtdata = new PhotoPoint[np];
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                phtdata[i*2] = (itp->second.x1-100 - itp->second.x2)*scalex;
+                phtdata[i*2+1] = (100-itp->second.y1 + 10 - itp->second.y2)*scaley;
+            } 
+            break;
+        case Left | Right:
+            phtdata = new PhotoPoint[2*np];
+            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+            {
+                phtdata[i*4+0] = (itp->second.x1 - 100)*scalex;
+                phtdata[i*4+1] = (100 - itp->second.y1)*scaley;
+                phtdata[i*4+2] = (itp->second.x1-100 - itp->second.x2)*scalex;
+                phtdata[i*4+3] = (100-itp->second.y1 + 10 - itp->second.y2)*scaley;
+            } 
+            break;
+        default:
+            break;
+        }
+        *xyval = phtdata;
+    }
+    if (index != 0)
+    {
+        np = m_points.size();
+        int* key = new int[np];
+        for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
+        {
+            key[i] = itp->first;
+        }
+        *index = key;
+    }
+    return np;
+}
+#endif
+
 ostream& operator<<(ostream& os, const PhotoPoints& pht)
 {
     return os;

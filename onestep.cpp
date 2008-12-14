@@ -2,6 +2,9 @@
 #include <map>
 #include <cmath>
 
+#include <iostream>
+#include <fstream>
+
 #include "controlpoints.h"
 #include "photopoints.h"
 #include "transform.h"
@@ -12,10 +15,12 @@
 using namespace std;
 
 Onestep::Onestep(QString ctl, QString pht, QObject* parent)
-    : QObject(parent)
+: QObject(parent)
 {
     m_ctl = ctl;
     m_pht = pht;
+    m_result = 0;
+    m_index = 0;
 }
 
 Onestep::~Onestep()
@@ -23,157 +28,309 @@ Onestep::~Onestep()
 
 }
 
-#if 0
-void Onestep::prepare(double** ctl, double** pht, double* f, int** phtindex, int** ctlindex, int* numctl, int* numpht)
-{
-    ControlPoints* pctl = static_cast<PHGProject*>parent()->controlPoints(m_ctl);
-    PhotoPoints* ppht = static_cast<PHGProject*>parent()->photoPoints(m_pht);
-
-    double* phtdata = 0;
-    double* ctldata = 0;
-    int* pi = 0;
-    int* ci = 0;
-    double focus;
-    int npht;         // number of controlpoints.
-    int nctl;         // number of photopoints.
-    nctl = pctl->data(&ctldata, &ctlindex);
-    npht = ppht->data(PhotoPoints::Left | PhotoPoints::Right,
-                      &focus, &phtdata, &phtindex);
-    int* matchedindex = new int[min(npht, nctl)];
-    int nmatched = 0;
-    for (i = 0, j = 0; i<npht && j<nctl;)
-    {
-        if (phtindex[i] == ctlindex[j])
-        {
-            matchedindex[i] = phtindex[i];
-            ++nmatched;
-            ++i;
-            ++j;
-        }
-        if (phtindex[i] < ctlindex[j])
-        {
-            ++i;
-        }
-        else
-            ++j;
-    }
- 
-}
-#endif
-
 bool Onestep::calculate()
 {
     ControlPoints* pctl = static_cast<PHGProject*>(parent())->controlPoints(m_ctl);
     PhotoPoints* ppht = static_cast<PHGProject*>(parent())->photoPoints(m_pht);
-    vector<double> pht;
-    vector<int> index;
-    double focus;
-    int np;               // total number of points
-    np = ppht->data(3, &focus, &pht, &index);
-    map<int, Point> ctl;
-    int nc;                // number of control points
-    nc = pctl->data(&ctl, &index);
-    int nun = np - nc;     // number of unknow points
+    double* pht = 0;
+    int* phtindex = 0;
+    double* ctl = 0;
+    int* ctlindex = 0;
+    double f;    // focus
+    int npht;               // total number of points
+    npht = ppht->data(3, &f, &pht, &phtindex);
+    int nctl;                // number of control points
+    nctl = pctl->data(&ctl, &ctlindex);
 
-    double* a = new double[4*np*(12+3*nun)]; // matrix A and B
-    double* l = new double[4*np];              // matrix l
-    double* s = new double[4*np];
-    double* orient = new double[12];
-    double* points = new double[3*np];
-    memset(orient, 0, sizeof(double)*12);
-    memset(points, 0, sizeof(double)*3*np);
-
-    // initialize orient elements
-    for (int i = 0; i < nc; ++i)
+    //memset(idx, 0, sizeof(int)*npht);
+    int i, j;
+    int nmatched = 0; // number of matched points
+    // the keys was guaranteed in increasing order
+    int* idx = new int[npht];      // matched control point indexes. -1 for unknow points.
+    for (i = 0; i < npht; idx[i++] = -1)
+        ;
+    for (i = 0, j = 0; i<npht && j<nctl; )
     {
-        orient[0] += points[i*3];
-        orient[1] += points[i*3+1];
-        orient[2] += points[i*3+2];
-    }
-    orient[0] /= nc;
-    orient[1] /= nc;
-    orient[2] = orient[2]/nc + 1e3*focus;
-    orient[3] = orient[4] = orient[5] = 0.0;
-    memcpy(orient+6, orient, sizeof(double)*6);
-
-    // initialize points values
-    map<int, Point>::const_iterator itc;
-    int i;
-    int* isctl = new int[np];
-    memset(isctl, 0, sizeof(int)*np);
-    for (i = 0, itc = ctl.begin(); i < np && itc != ctl.end(); ++i)
-    {
-        points[i*3] = itc->second.x;
-        points[i*3+1] = itc->second.y;
-        points[i*3+2] = itc->second.z;
-        if (index[i] == itc->first)
+        if (phtindex[i] == ctlindex[j])
         {
-            isctl[i] = 1;
-            ++itc;
+            idx[i] = j;
+            ++nmatched;
+            ++i;
+            ++j;
+        }
+        else if (phtindex[i] > ctlindex[j])
+        {
+            ++j;
+        }
+        else
+        {
+            ++i;
         }
     }
-    
-    int maxit = 30;
-    int itn = 0;
+    int nunknown = npht - nmatched;   // number of unknow points
+
+    double* a = new double[4*npht*(12+3*nunknown)]; // matrix A and B
+    double* l = new double[4*npht];              // matrix l
+    double* s = new double[3*nunknown+12];
+    double* orient = m_orient;
+    m_result = new double[3*npht];
+    double* points = m_result;
+
 #if 0
+    double ip[3];  // initial values for unknown points
+    // use the first control points as the initial value of unkonwn points.
+    i = 0;
+    while( idx[i] == -1)
+    {
+        ++i;
+    }
+    ip[0] = ctl[idx[i]*3+1] * 1000;
+    ip[1] = ctl[idx[i]*3] * 1000;
+    ip[2] = ctl[idx[i]*3+2] * 1000;
+#endif
+
+    int si[2];
+    for (i = 0, j = 0; i<npht && j<2; ++i)
+    {
+        if (idx[i] != -1)
+            si[j++] = i;
+    }
+    double phtscale;
+    double scp[4];
+    scp[0] = ctl[idx[si[0]]*3+1] * 1000;
+    scp[1] = ctl[idx[si[0]]*3] * 1000;
+    scp[2] = ctl[idx[si[1]]*3+1] * 1000;
+    scp[3] = ctl[idx[si[1]]*3] * 1000;
+    double spp[4];
+    spp[0] = pht[si[0]*4];
+    spp[1] = pht[si[0]*4+1];
+    spp[2] = pht[si[1]*4];
+    spp[3] = pht[si[1]*4+1];
+    phtscale = sqrt((scp[0]-scp[2])*(scp[0]-scp[2]) + (scp[1]-scp[3])*(scp[1]-scp[3]))
+        / sqrt((spp[0]-spp[2])*(spp[0]-spp[2]) + (spp[1]-spp[3])*(spp[1]-spp[3]));
+
+    memset(orient, 0, sizeof(double)*12);
+    for (int i = 0; i < npht; ++i)
+    {
+        if (idx[i] != -1)
+        {
+            orient[0] += ctl[idx[i]*3+1]*1000;
+            orient[1] += ctl[idx[i]*3]*1000;
+            orient[2] += ctl[idx[i]*3+2]*1000;
+        }
+    }
+    orient[0] /= nmatched;
+    orient[1] /= nmatched;
+    orient[2] = orient[2]/nmatched + phtscale*f;
+    orient[6] = orient[0];
+    orient[7] = orient[1];
+    orient[8] = orient[2];
+    // initialize points values
+    for (i = 0; i < npht; ++i)
+    {
+        if (idx[i] != -1)
+        {
+            points[i*3] = ctl[idx[i]*3+1] * 1000;
+            points[i*3+1] = ctl[idx[i]*3] * 1000;
+            points[i*3+2] = ctl[idx[i]*3+2] * 1000;
+        }
+        else
+        {
+            points[i*3] = m_orient[0];
+            points[i*3+1] = m_orient[1];
+            points[i*3+2] = m_orient[2] - phtscale*f;
+        }
+    }
+    qDebug() << "Onestep initial values";
+    for (i = 0; i < npht; ++i)
+    {
+        qDebug() << points[i*3] << points[i*3+1] << points[i*3+2];
+    }
+
+    int maxit = 300;
+    int itn = 0;
+    int nc = nunknown*3 + 12; // number of columns of matrix a
+    ofstream of;
+    of.open("./debug.txt");
     do
     {
-        // set matrix a
-        memset(a, 0, sizeof(double)*4*np*(12+3*nc));
-        for (i = 0; i < np; ++i)
+        ++itn;
+        memset(a, 0, sizeof(double)*4*npht*nc);
+        memset(l, 0, sizeof(double)*4*npht);
+        int iup = 0;
+        // set matrix a and l
+        for (i = 0; i < npht; ++i)
         {
-            int nc = n*3 + 12; // number of columns of matrix a
-            a[0] = (a1(o)*f + a3(o)*pht[i*4]) / z_(o, ctl, i);
-            a[1] = (b1(o)*f + b3(o)*pht[i*4]) / z_(o, ctl, i);
-            a[2] = (c1(o)*f + c3(o)*pht[i*4]) / z_(o, ctl, i);
-            a[3] = pht[i*4+1]*sin(o[4]) - 
-                (pht[i*4]*(pht[i*4]*cos(o[5])-pht[i*4+1]*sin(o[5]))/f
-                 + f*cos(o[5])) * cos(o[4]);
-            a[4] = -f*sin(o[5]) - 
-                pht[i*4] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
-            a[5] = pht[i*4+1];
-            a[nc] = (a2(o)*f + a3(o)*pht[i*4+1]) / z_(o, ctl, i);
-            a[nc+1] = (b2(o)*f + b3(o)*pht[i*4+1]) / z_(o, ctl, i);
-            a[nc+2] = (c2(o)*f + c3(o)*pht[i*4+1]) / z_(o, ctl, i);
-            a[nc+3] = -pht[i*4]*sin(o[4]) - (pht[i*4+1]*(pht[i*4]*cos(o[5])
-                                                         -pht[i*4+1]*sin(o[5]))/f 
-                                             -f*sin(o[5]))*cos(o[4]);
-            a[nc+4] = -f*cos(o[5]) - pht[i*4+1] 
-                      * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
-            a[nc+5] = -pht[i*4];
+            ma(a+nc*i*4, pht+4*i, points+3*i, orient, nc, idx[i], iup, f, npht, nmatched, i);
+            if (idx[i] == -1)
+                ++iup;
+
+            l[i*4] = pht[4*i] + f * (a1(orient)*(points[3*i]-orient[0]) + 
+                                     b1(orient)*(points[3*i+1]-orient[1]) + 
+                                     c1(orient)*(points[3*i+2]-orient[2])
+                                    ) / z_(orient, points+3*i);
+            l[i*4+1] = pht[4*i+1] + f * (a2(orient)*(points[3*i]-orient[0]) + 
+                                         b2(orient)*(points[3*i+1]-orient[1]) + 
+                                         c2(orient)*(points[3*i+2]-orient[2])
+                                        ) / z_(orient, points+3*i);
+            l[i*4+2] = pht[4*i+2] + f * (a1(orient+6)*(points[3*i]-orient[6]) + 
+                                         b1(orient+6)*(points[3*i+1]-orient[7]) + 
+                                         c1(orient+6)*(points[3*i+2]-orient[8])
+                                        ) / z_(orient+6, points+3*i);
+            l[i*4+3] = pht[4*i+3] + f * (a2(orient+6)*(points[3*i]-orient[6]) + 
+                                         b2(orient+6)*(points[3*i+1]-orient[7]) + 
+                                         c2(orient+6)*(points[3*i+2]-orient[8])
+                                        ) / z_(orient+6, points+3*i);
         }
-    } while(!exact(l,12+3*nun) && itn<maxit);
+#if 0
+        of << "Matrix a:" << endl;
+        for (int ii = 0; ii < 4*npht; ++ii)
+        {
+            for (int jj = 0; jj < nc; ++jj)
+                of << a[ii*nc+jj] << ' ';
+            of << endl;
+        }
+        of << endl << "Matrix l:" ;
+        for (int ii = 0; ii < 4*npht; ++ii)
+            of << l[ii] << ' ';
+        of << endl;
 #endif
+        lls(4*npht, nc, a, 1, l, s);
+        for (i = 0; i < 12; ++i)
+            orient[i] += l[i];
+        for (i = 0, j = 12; i < npht; ++i)
+        {
+            if (idx[i] == -1)
+            {
+                points[i*3] += l[j];
+                points[i*3+1] += l[j+1];
+                points[i*3+2] += l[j+2];
+                of << phtindex[i] << ' ';
+                of << points[i*3] << ' ' << points[i*3+1] << ' ';
+                of << points[i*3+2] << ' ' << l[j] << ' ' << l[j+1] << ' ' << l[j+2] << endl;
+                j += 3;
+            }
+        }
+#if 0
+        of << "l:" << endl;
+        for (i = 0; i < 12; ++i)
+            of << l[i] << ' ';
+        of << endl << endl;
+#endif 
+    } while(!exact(l,nc) && itn<maxit);
+    qDebug() << "onestep itertations: " << itn;
+    qDebug() << "Orient Elements:";
+    qDebug() << "Left:" << m_orient[0] << m_orient[1] << m_orient[2] << m_orient[3] << m_orient[4] << m_orient[5];
+    qDebug() << "Right:" << m_orient[6] << m_orient[7] << m_orient[8] << m_orient[9] << m_orient[10] << m_orient[11]; 
+    qDebug() << "Onestep results: ";
+    for (i = 0; i < npht; ++i)
+    {
+        qDebug() << m_result[i*3+1] / 1000 << m_result[i*3] / 1000 << m_result[i*3+2] / 1000;
+    }
     return true;
 }
 
-#if 0
-void Onestep::ma(vector<double> pht, double* p, double* o, int isc, double f, int n, int s)
+double Onestep::z_(double* orient, double* ctl)
 {
-    int nc = n*3 + 12; // number of columns of matrix a
-    a[0] = (a1(o)*f + a3(o)*pht[i*4]) / z_(o, ctl, i);
-    a[1] = (b1(o)*f + b3(o)*pht[i*4]) / z_(o, ctl, i);
-    a[2] = (c1(o)*f + c3(o)*pht[i*4]) / z_(o, ctl, i);
-    a[3] = pht[i*4+1]*sin(o[4]) - 
-        (pht[i*4]*(pht[i*4]*cos(o[5])-pht[i*4+1]*sin(o[5]))/f
-         + f*cos(o[5])) * cos(o[4]);
-    a[4] = -f*sin(o[5]) - 
-        pht[i*4] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
-    a[5] = pht[i*4+1];
-    a[nc] = (a2(o)*f + a3(o)*pht[i*4+1]) / z_(o, ctl, i);
-    a[nc+1] = (b2(o)*f + b3(o)*pht[i*4+1]) / z_(o, ctl, i);
-    a[nc+2] = (c2(o)*f + c3(o)*pht[i*4+1]) / z_(o, ctl, i);
-    a[nc+3] = -pht[i*4]*sin(o[4]) - (pht[i*4+1]*(pht[i*4]*cos(o[5])
-                                                 -pht[i*4+1]*sin(o[5]))/f 
-                                     -f*sin(o[5]))*cos(o[4]);
-    a[nc+4] = -f*cos(o[5]) - pht[i*4+1] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
-    a[nc+5] = -pht[i*4];
+    return a3(orient)*(ctl[0] - orient[0])
+        + b3(orient)*(ctl[1] - orient[1])
+        + c3(orient)*(ctl[2] - orient[2]);
 }
+
+// setup matrix a.
+void Onestep::ma(double* a, double* pht, double* ctl, double* o, int nc, int ictl, int iup, double f, int npht, int nmatched, int i)
+{
+#define XL pht[0]
+#define YL pht[1] 
+#define XR pht[2]
+#define YR pht[3]
+#if 0
+    a[0] = (a1(orient)*f + a3(orient)*pht[index*2]) / z_(orient, ctl, index);
+    a[1] = (b1(orient)*f + b3(orient)*pht[index*2]) / z_(orient, ctl, index);
+    a[2] = (c1(orient)*f + c3(orient)*pht[index*2]) / z_(orient, ctl, index);
+    a[3] = pht[index*2+1]*sin(orient[4]) - 
+        (pht[index*2]*(pht[index*2]*cos(orient[5])-pht[index*2+1]*sin(orient[5]))/f
+         + f*cos(orient[5])) * cos(orient[4]);
+    a[4] = -f*sin(orient[5]) - 
+        pht[index*2] * (pht[index*2]*sin(orient[5]) + pht[index*2+1]*cos(orient[5])) / f;
+    a[5] = pht[index*2+1];
+    a[6] = (a2(orient)*f + a3(orient)*pht[index*2+1]) / z_(orient, ctl, index);
+    a[7] = (b2(orient)*f + b3(orient)*pht[index*2+1]) / z_(orient, ctl, index);
+    a[8] = (c2(orient)*f + c3(orient)*pht[index*2+1]) / z_(orient, ctl, index);
+    a[9] = -pht[index*2]*sin(orient[4]) - (pht[index*2+1]*(pht[index*2]*cos(orient[5])
+                                                           -pht[index*2+1]*sin(orient[5]))/f 
+                                           -f*sin(orient[5]))*cos(orient[4]);
+    a[10] = -f*cos(orient[5]) - pht[index*2+1] * (pht[index*2]*sin(orient[5]) + pht[index*2+1]*cos(orient[5])) / f;
+    a[11] = -pht[index*2];
 #endif
+    // matrix A
+    // left
+    a[0] = (a1(o)*f + a3(o)*XL) / z_(o, ctl);
+    a[1] = (b1(o)*f + b3(o)*XL) / z_(o, ctl);
+    a[2] = (c1(o)*f + c3(o)*XL) / z_(o, ctl);
+    a[3] = YL*sin(o[4]) - 
+        (XL*(XL*cos(o[5])-YL*sin(o[5]))/f
+         + f*cos(o[5])) * cos(o[4]);
+    a[4] = -f*sin(o[5]) 
+        - XL * (XL*sin(o[5]) + YL*cos(o[5])) / f;
+    a[5] = YL;
+
+    a[nc] = (a2(o)*f + a3(o)*YL) / z_(o, ctl);
+    a[nc+1] = (b2(o)*f + b3(o)*YL) / z_(o, ctl);
+    a[nc+2] = (c2(o)*f + c3(o)*YL) / z_(o, ctl);
+    a[nc+3] = -XL*sin(o[4]) - (YL*(XL*cos(o[5])
+                                   -YL*sin(o[5]))/f 
+                               -f*sin(o[5]))*cos(o[4]);
+    a[nc+4] = -f*cos(o[5]) - YL*(XL*sin(o[5]) + YL*cos(o[5])) / f;
+    a[nc+5] = -XL;
+
+    // right 
+    a[2*nc+6] = (a1(o+6)*f + a3(o+6)*XR) / z_(o+6, ctl);
+    a[2*nc+7] = (b1(o+6)*f + b3(o+6)*XR) / z_(o+6, ctl);
+    a[2*nc+8] = (c1(o+6)*f + c3(o+6)*XR) / z_(o+6, ctl);
+    a[2*nc+9] = YR*sin(o[10]) - 
+        (XR*(XR*cos(o[11])-YR*sin(o[11]))/f
+         + f*cos(o[11])) * cos(o[10]);
+    a[2*nc+10] = -f*sin(o[11]) - 
+        XR * (XR*sin(o[11]) + YR*cos(o[11])) / f;
+    a[2*nc+11] = YR;
+
+    a[3*nc+6] = (a2(o+6)*f + a3(o+6)*XR) / z_(o+6, ctl);
+    a[3*nc+7] = (b2(o+6)*f + b3(o+6)*XR) / z_(o+6, ctl);
+    a[3*nc+8] = (c2(o+6)*f + c3(o+6)*XR) / z_(o+6, ctl);
+    a[3*nc+9] = -XR*sin(o[10]) - (YR*(XR*cos(o[11])
+                                      -YR*sin(o[11]))/f 
+                                  -f*sin(o[11]))*cos(o[10]);
+    a[3*nc+10] = -f*cos(o[11]) - YR*(XR*sin(o[11]) + YR*cos(o[11])) / f;
+    a[3*nc+11] = -XR;
+
+    // matrix B. also stored in a
+    if (ictl == -1)
+    {
+        // left
+        a[12+iup*3] = -((a1(o)*f + a3(o)*XL) / z_(o, ctl)); // -a11
+        a[12+iup*3+1] = -((b1(o)*f + b3(o)*XL) / z_(o, ctl)); // -a12
+        a[12+iup*3+2] = -((c1(o)*f + c3(o)*XL) / z_(o, ctl)); // -a13
+
+        a[nc+12+iup*3] = -((a2(o)*f + a3(o)*YL) / z_(o, ctl));
+        a[nc+12+iup*3+1] = -((b2(o)*f + b3(o)*YL) / z_(o, ctl));
+        a[nc+12+iup*3+2] = -((c2(o)*f + c3(o)*YL) / z_(o, ctl));
+
+        // right
+        a[nc*2+12+iup*3] = -((a1(o+6)*f + a3(o+6)*XR) / z_(o+6, ctl)); // -a11
+        a[nc*2+12+iup*3+1] = -((b1(o+6)*f + b3(o+6)*XR) / z_(o+6, ctl)); // -a12
+        a[nc*2+12+iup*3+2] = -((c1(o+6)*f + c3(o+6)*XR) / z_(o+6, ctl)); // -a13
+
+        a[nc*3+12+iup*3] = -((a2(o+6)*f + a3(o+6)*XR) / z_(o+6, ctl));
+        a[nc*3+12+iup*3+1] = -((b2(o+6)*f + b3(o+6)*XR) / z_(o+6, ctl));
+        a[nc*3+12+iup*3+2] = -((c2(o+6)*f + c3(o+6)*XR) / z_(o+6, ctl));
+    }
+}
+
 
 bool Onestep::exact(double* x, int n)
 {
-    double lenlim = 10; // length limits
+    double lenlim = 1e-2; // length limits
     double anglim = 3e-5; // angle limits
     int i;
     for (i = 0; i < 3; ++i)
@@ -196,217 +353,10 @@ bool Onestep::exact(double* x, int n)
         if (fabs(x[i]) > anglim)
             return false;
     }
-    for (i = 12; i < 12+3*n; ++i)
+    for (i = 12; i < n; ++i)
     {
         if (fabs(x[i]) > lenlim)
             return false;
     }
     return true;
 }
-
-#if 0
-bool Onestep::calculate()
-{
-    ControlPoints* pctl = static_cast<PHGProject*>parent()->controlPoints(m_ctl);
-    PhotoPoints* ppht = static_cast<PHGProject*>parent()->photoPoints(m_pht);
-
-    double* phtdata = 0;
-    double* ctldata = 0;
-    int* phtindex = 0;
-    int* ctlindex = 0;
-    double focus;
-    int npht;         // number of controlpoints.
-    int nctl;         // number of photopoints.
-    nctl = pctl->data(&ctldata, &ctlindex);
-    npht = ppht->data(PhotoPoints::Left | PhotoPoints::Right,
-                      &focus, &phtdata, &phtindex);
-    if ((npht == 0) || (nctl == 0))
-        return false;
-    double* ma = new double[4*npht*(12+3*npht)];
-    double* l = new double[4*npht];
-    double* s = new double[4*npht];
-    double* orient = new double[12];
-    double* points = new double[3*npht];
-    memset(orient, 0, sizeof(double)*12);
-    int i, j;
-
-    int* matchedindex = new int[npht];
-    memset(matchedindex, 0, sizeof(int)*npht);
-    double* ctl = new double[nctl*3];
-    int nmatched = 0;
-    for (i = 0, j = 0; i<npht && j<nctl;)
-    {
-        if (phtindex[i] == ctlindex[j])
-        {
-            points[i*3] = phtdata[i*3+1]*1000;
-            points[i*3+1] = phtdata[i*3]*1000;
-            points[i*3+2] = phtdata[i*3+2]*1000;
-            matchedindex[i] = phtindex[i];
-            ++nmatched;
-            ++i;
-            ++j;
-        }
-        if (phtindex[i] < ctlindex[j])
-        {
-            ++i;
-        }
-        else
-            ++j;
-    }
-    for (int i = 0; i < nmatched; ++i)
-    {
-        orient[0] += points[i*3];
-        orient[1] += points[i*3+1];
-        orient[2] += points[i*3+2];
-    }
-    orient[0] /= nmatched;
-    orient[1] /= nmatched;
-    orient[2] = orient[2]/nmatched + 1e3*focus;
-    orient[3] = orient[4] = orient[5] = 0.0;
-    memcpy(orient+6, orient, sizeof(double)*6);
- 
-    double defaultxyz[3];
-    memset(defaultxyz, 0, sizeof(double)*3);
-    for (i = 0; i < nmatchedpoints; ++i)
-    {
-        defaultxyz[0] += points[i*3];
-        defaultxyz[1] += points[i*3+1];
-        defaultxyz[2] += points[i*3+2];
-    }
-    defaultxyz[0] /= nmatched;
-    defaultxyz[1] /= nmatched;
-    defaultxyz[2] /= nmatched;
-    for (i = 0, j = 0; i < npht; ++i)
-    {
-        if (phtindex[i] == matchedindex[j])
-        {
-//            points[i*3] = pctl->m_points[matchedindex[i]].second.y * 1000;
-//            points[i*3+1] = pctl->m_points[matchedindex[i]].second.x * 1000;
-//            points[i*3+2] = pctl->m_points[matchedindex[i]].second.z * 1000;
-            memset(points+i*3, 0, 3*sizeof(double));
-            ++j;
-        }
-        else
-        {
-            points[i*3] = defaultxyz[0];
-            points[i*3+1] = defaultxyz[1];
-            points[i*3+2] = defaultxyz[2];
-        }
-        ++i;
-    }
-
-    int itn = 0;
-    int maxitn = 30;
-    do
-    {
-        memset(a, 0, sizeof(double)*4*npht*(12+3*npht));
-        memset(l, 0, sizeof(double)*4*npht);
-        for (i = 0; i < npht; ++i)
-        {
-            ma(a, points, phtdata, focus, orient, npht, i);           
-            if (matchedindex[i] != 0)
-            {
-                memset(l+i*4, 0, sizeof(double)*4);
-            }
-            else
-            {
-                l[i*4] = phtdata[4*i] + f * (a1(orient)*(ctldata[3*i]-orient[0]) 
-                                             + b1(orient)*(ctldata[3*i+1]-orient[1]) 
-                                             + c1(orient)*(ctldata[3*i+2]-orient[2])
-                                            ) / z_(orient, ctldata, i);
-                l[i*4+1] = phtdata[4*i+1] 
-                           + f * (a2(orient)*(ctldata[3*i]-orient[0])
-                                  + b2(orient)*(ctldata[3*i+1]-orient[1]) 
-                                  + c2(orient)*(ctldata[3*i+2]-orient[2])
-                                 ) / z_(orient, ctldata, i);
-                l[i*4+2] = phtdata[4*i] + f * (a1(orient+6)*(ctldata[3*i]-orient[6]) 
-                                             + b1(orient+6)*(ctldata[3*i+1]-orient[7]) 
-                                             + c1(orient+6)*(ctldata[3*i+2]-orient[8])
-                                            ) / z_(orient+6, ctldata, i);
-                l[i*4+3] = phtdata[4*i+1] 
-                           + f * (a2(orient+6)*(ctldata[3*i]-orient[6])
-                                  + b2(orient+6)*(ctldata[3*i+1]-orient[7]) 
-                                  + c2(orient+6)*(ctldata[3*i+2]-orient[8])
-                                 ) / z_(orient+6, ctldata, i);
-            }
-        }
-    } while(!exact(l, 12+3*(npht-nmatched)) && (itn < maxit));
-    delete []ma;
-    delete []l;
-    delete []s;
-    delete []phtdata;
-    delete []phtindex;
-    delete []ctldata;
-    delete []ctlindex;
-}
-
-double Onestep::z_(double* o, double* ctl, int i)
-{
-    return a3(o)*(ctl[3*i] - o[0])
-        + b3(o)*(ctl[3*i+1] - o[1])
-        + c3(o)*(ctl[3*i+2] - o[2]);
-}
-
-void Onestep::ma(double* a, int* mi, double* pht, double f, double* o,int np, int i)
-{
-    int nc = 12+np*3;     // number of columns of matrix a
-    // left photo
-    a[0] = (a1(o)*f + a3(o)*pht[i*4]) / z_(o, ctl, i);
-    a[1] = (b1(o)*f + b3(o)*pht[i*4]) / z_(o, ctl, i);
-    a[2] = (c1(o)*f + c3(o)*pht[i*4]) / z_(o, ctl, i);
-    a[3] = pht[i*4+1]*sin(o[4]) - 
-        (pht[i*4]*(pht[i*4]*cos(o[5])-pht[i*4+1]*sin(o[5]))/f
-         + f*cos(o[5])) * cos(o[4]);
-    a[4] = -f*sin(o[5]) - 
-        pht[i*4] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
-    a[5] = pht[i*4+1];
-    a[nc] = (a2(o)*f + a3(o)*pht[i*4+1]) / z_(o, ctl, i);
-    a[nc+1] = (b2(o)*f + b3(o)*pht[i*4+1]) / z_(o, ctl, i);
-    a[nc+2] = (c2(o)*f + c3(o)*pht[i*4+1]) / z_(o, ctl, i);
-    a[nc+3] = -pht[i*4]*sin(o[4]) - (pht[i*4+1]*(pht[i*4]*cos(o[5])
-                                              -pht[i*4+1]*sin(o[5]))/f 
-                                  -f*sin(o[5]))*cos(o[4]);
-    a[nc+4] = -f*cos(o[5]) - pht[i*4+1] * (pht[i*4]*sin(o[5]) + pht[i*4+1]*cos(o[5])) / f;
-    a[nc+5] = -pht[i*4];
-
-    // right photo
-    a[2*nc+0] = (a1((o+6))*f + a3((o+6))*pht[i*4+2]) / z_((o+6), ctl, i);
-    a[2*nc+1] = (b1((o+6))*f + b3((o+6))*pht[i*4+2]) / z_((o+6), ctl, i);
-    a[2*nc+2] = (c1((o+6))*f + c3((o+6))*pht[i*4+2]) / z_((o+6), ctl, i);
-    a[2*nc+3] = pht[i*4+2+1]*sin((o+6)[4]) - 
-        (pht[i*4+2]*(pht[i*4+2]*c(o+6)s((o+6)[5])-pht[i*4+2+1]*sin((o+6)[5]))/f
-         + f*c(o+6)s((o+6)[5])) * c(o+6)s((o+6)[4]);
-    a[2*nc+4] = -f*sin((o+6)[5]) 
-        - pht[i*4+2] * (pht[i*4+2]*sin((o+6)[5])
-                        + pht[i*4+2+1]*c(o+6)s((o+6)[5])) / f;
-    a[2*nc+5] = pht[i*4+2+1];
-    a[3*nc] = (a2((o+6))*f + a3((o+6))*pht[i*4+2+1]) / z_((o+6), ctl, i);
-    a[3*nc+1] = (b2((o+6))*f + b3((o+6))*pht[i*4+2+1]) / z_((o+6), ctl, i);
-    a[3*nc+2] = (c2((o+6))*f + c3((o+6))*pht[i*4+2+1]) / z_((o+6), ctl, i);
-    a[3*nc+3] = -pht[i*4+2]*sin((o+6)[4]) 
-                - (pht[i*4+2+1]*(pht[i*4+2]*c(o+6)s((o+6)[5])
-                                 - pht[i*4+2+1]*sin((o+6)[5]))/f 
-                   -f*sin((o+6)[5]))*c(o+6)s((o+6)[4]);
-    a[3*nc+4] = -f*c(o+6)s((o+6)[5]) 
-                - pht[i*4+2+1] * (pht[i*4+2]*sin((o+6)[5]) 
-                                  + pht[i*4+2+1]*c(o+6)s((o+6)[5])) / f;
-    a[3*nc+5] = -pht[i*4+2];
-    // unknow points.  Matrix B
-    if (mi[i] == 0)
-    {
-        a[12+3*(i-1)] = -a[0];
-        a[12+3*(i-1)+1] = -a[1];
-        a[12+3*(i-1)+2] = -a[2];
-        a[nc+12+3*(i-1)] = -a[nc];
-        a[nc+12+3*(i-1)+1] = -a[nc+1];
-        a[nc+12+3*(i-1)+2] = -a[nc+2];
-        a[2*nc+12+3*(i-1)] = -a[2*nc];
-        a[2*nc+12+3*(i-1)+1] = -a[2*nc+1];
-        a[2*nc+12+3*(i-1)+2] = -a[2*nc+2];
-        a[3*nc+12+3*(i-1)] = -a[3*nc];
-        a[3*nc+12+3*(i-1)+1] = -a[3*nc+1];
-        a[3*nc+12+3*(i-1)+2] = -a[3*nc+2];
-    }
-}
-
-#endif

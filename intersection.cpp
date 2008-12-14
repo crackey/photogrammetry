@@ -310,7 +310,7 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
     int i, j;
     int np = 0; // number of matched points
     // the keys was guaranteed in increasing order
-    for (i = 0, j = 0; i<nctlp && j<nphtp; )
+    for (i = 0, j = 0; i<nphtp && j<nctlp; )
     {
         if (phtindex[i] == ctlindex[j])
         {
@@ -354,63 +354,6 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
     delete []ctldata;
 
     return np;
-#if 0
-    map<int, Point> *ctl = &tctl->m_points;
-    map<int, PhotoPoint> *pht = &tpht->m_points;
-    map<int, Point>::iterator itc;
-    map<int, PhotoPoint>::iterator itp;
-    int n = min(ctl->size(), pht->size());
-    int* keys = new int[n];
-    for (itc = ctl->begin(), itp = pht->begin();
-         (itc != ctl->end()) && (itp != pht->end()); 
-        )
-    {
-        if (itc->first == itp->first)
-        {
-            keys[np] = itc->first;
-            ++np;
-            ++itc; 
-            ++itp;
-        }
-        else if (itc->first < itp->first)
-            ++itc;
-        else
-            ++itp;
-    }
-    double* phtdata = new double[2*np];
-    double* ctldata = new double[3*np];
-    double scalex;
-    double scaley;
-    scalex = tpht->m_fiducial[2] / tpht->m_fiducial[0];
-    scaley = tpht->m_fiducial[3] / tpht->m_fiducial[1];
-    for (int i = 0; i < np; ++i)
-    {
-        ctldata[i*3] = (*ctl)[keys[i]].y * 1e3; // x and y should be reverted
-        ctldata[i*3+1] = (*ctl)[keys[i]].x * 1e3;
-        ctldata[i*3+2] = (*ctl)[keys[i]].z * 1e3;
-
-        switch (p)
-        {
-        case 0:   // the left photo
-            phtdata[i*2] = (*pht)[keys[i]].x1 - 100;
-            phtdata[i*2+1] = 100 - (*pht)[keys[i]].y1;
-            break;
-        case 1:   // the right photo
-            phtdata[i*2] = (*pht)[keys[i]].x1 - 100 - (*pht)[keys[i]].x2;
-            phtdata[i*2+1] = 100 - (*pht)[keys[i]].y1 + 10 - (*pht)[keys[i]].y2;
-            break;
-        default:
-            break;
-        }
-        phtdata[i*2] *= scalex;
-        phtdata[i*2+1] *= scaley;
-    }
-    *focus = tpht->f();
-    *ppht = phtdata;
-    *pctl = ctldata;
-
-    delete []keys;
-#endif
 }
 
 int Intersection::forwardResult(int** index, double** result)

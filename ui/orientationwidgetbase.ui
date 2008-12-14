@@ -1,0 +1,108 @@
+<ui version="4.0" >
+ <class>OrientationWidgetBase</class>
+ <widget class="QWidget" name="OrientationWidgetBase" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>466</width>
+    <height>433</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout" >
+   <item>
+    <widget class="QSplitter" name="splitter" >
+     <property name="orientation" >
+      <enum>Qt::Vertical</enum>
+     </property>
+     <widget class="QTableWidget" name="orientTable" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="Preferred" hsizetype="MinimumExpanding" >
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="gridStyle" >
+       <enum>Qt::SolidLine</enum>
+      </property>
+      <property name="rowCount" >
+       <number>5</number>
+      </property>
+      <property name="columnCount" >
+       <number>2</number>
+      </property>
+      <row>
+       <property name="text" >
+        <string>u</string>
+       </property>
+      </row>
+      <row>
+       <property name="text" >
+        <string>v</string>
+       </property>
+      </row>
+      <row>
+       <property name="text" >
+        <string>φ</string>
+       </property>
+      </row>
+      <row>
+       <property name="text" >
+        <string>ω</string>
+       </property>
+      </row>
+      <row>
+       <property name="text" >
+        <string>κ</string>
+       </property>
+      </row>
+      <column>
+       <property name="text" >
+        <string>值</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>误差</string>
+       </property>
+      </column>
+     </widget>
+     <widget class="QTableWidget" name="resultTable" >
+      <property name="rowCount" >
+       <number>1</number>
+      </property>
+      <property name="columnCount" >
+       <number>4</number>
+      </property>
+      <row/>
+      <column>
+       <property name="text" >
+        <string>点号</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>X(M)</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Y(M)</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>Z(M)</string>
+       </property>
+      </column>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

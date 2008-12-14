@@ -97,9 +97,19 @@ Intersection* PHGProject::intersection(QString key)
     return m_intersection;
 }
 
+Orientation* PHGProject::orientation(QString key)
+{
+    return m_orientation;
+}
+
 QString PHGProject::curPhotoPoints()
 {
     return m_curPhotoPoints;
+}
+
+QString PHGProject::curOrientation()
+{
+    return m_curOrientation;
 }
 
 QString PHGProject::curControlPoints()
@@ -161,6 +171,7 @@ void PHGProject::forwardIntersection()
     if (m_intersection != 0 && m_intersection->forward())
     {
         emit forwardFinished(true);
+        emit forwardAvailable(false);
     }
     else
         emit forwardFinished(false);
@@ -177,6 +188,7 @@ void PHGProject::backwardIntersection()
     {
         m_curIntersection = key;
         emit backwardFinished(true);
+        emit backwardAvailable(false);
     }
     else
         emit backwardFinished(false);
@@ -195,6 +207,8 @@ void PHGProject::relativeOrientation()
     {
         m_curOrientation = key;
         emit relativeFinished(true);
+        emit absoluteAvailable(true);
+        emit relativeAvailable(false);
     }
     else
         emit relativeFinished(false);
@@ -205,7 +219,7 @@ void PHGProject::absoluteOrientation()
     if (m_orientation != 0 && m_orientation->absolute())
     {
         emit absoluteFinished(true);
-        return;
+        emit absoluteAvailable(false);
     }
     emit absoluteFinished(false);
 

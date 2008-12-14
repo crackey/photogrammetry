@@ -23,9 +23,11 @@ public:
     PhotoPoints* photoPoints(QString key);
     ControlPoints* controlPoints(QString key);
     Intersection* intersection(QString key);
+    Orientation* orientation(QString key);
     QString curPhotoPoints();
     QString curControlPoints();
     QString curIntersection();
+    QString curOrientation();
 
 public slots:
     void openfile(QString filepath);

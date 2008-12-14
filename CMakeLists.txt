@@ -15,6 +15,7 @@ set(QTMOC_SRCS
     photopoints.h
     intersection.h
     intersectionwidget.h
+    orientationwidget.h
     orientation.h
     onestep.h
     )
@@ -23,6 +24,7 @@ QT4_WRAP_CPP(QT_MOC_SRCS ${QTMOC_SRCS})
 set(QTUIC_SRCS 
     ui/photogrammetrybase.ui
     ui/intersectionwidgetbase.ui
+    ui/orientationwidgetbase.ui
     )
 QT4_WRAP_UI(QT_UIC_HEADERS ${QTUIC_SRCS})
 
@@ -54,6 +56,7 @@ SET(_HEADERS
     intersectionwidget.h
     transform.h
     orientation.h
+    orientationwidget.h
     onestep.h
     )
 SET(_SRCS
@@ -70,6 +73,7 @@ SET(_SRCS
     intersectionwidget.cpp
     transform.cpp
     orientation.cpp
+    orientationwidget.cpp
     onestep.cpp
     )
 SET(SRCS
