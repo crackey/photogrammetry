@@ -2,9 +2,6 @@
 #include <map>
 #include <cmath>
 
-#include <iostream>
-#include <fstream>
-
 #include "controlpoints.h"
 #include "photopoints.h"
 #include "transform.h"
@@ -27,6 +24,18 @@ Onestep::~Onestep()
 {
 
 }
+int Onestep::orient(double** o)
+{
+    *o = m_orient;
+    return 12;
+}
+
+int Onestep::result(int** index, double** r)
+{
+    *r = m_result;
+    *index = m_index;
+    return m_pnum;
+}
 
 bool Onestep::calculate()
 {
@@ -39,13 +48,15 @@ bool Onestep::calculate()
     double f;    // focus
     int npht;               // total number of points
     npht = ppht->data(3, &f, &pht, &phtindex);
+    m_pnum = npht;
     int nctl;                // number of control points
     nctl = pctl->data(&ctl, &ctlindex);
-
+    
+    m_index = phtindex;
     //memset(idx, 0, sizeof(int)*npht);
     int i, j;
     int nmatched = 0; // number of matched points
-    // the keys was guaranteed in increasing order
+    // the keys was guaranteed in increasing roder
     int* idx = new int[npht];      // matched control point indexes. -1 for unknow points.
     for (i = 0; i < npht; idx[i++] = -1)
         ;
@@ -119,9 +130,7 @@ bool Onestep::calculate()
     orient[0] /= nmatched;
     orient[1] /= nmatched;
     orient[2] = orient[2]/nmatched + phtscale*f;
-    orient[6] = orient[0];
-    orient[7] = orient[1];
-    orient[8] = orient[2];
+    memcpy(orient+6, orient, 6*sizeof(double));
     // initialize points values
     for (i = 0; i < npht; ++i)
     {
@@ -145,11 +154,9 @@ bool Onestep::calculate()
                  << points[i*3] << points[i*3+1] << points[i*3+2];
     }
 
-    int maxit = 100;
+    int maxit = 1;
     int itn = 0;
-    int nc = nunknown*3 + 12; // number of columns of matrix a
-    ofstream of;
-    of.open("./debug.txt");
+    int nc = nunknown*3 + 12; // number of cloumns of matrix a
     double* a = new double[4*npht*nc]; // matrix A and B
     double* l = new double[4*npht];              // matrix l
     //double* s = new double[3*nunknown+12];
@@ -158,19 +165,6 @@ bool Onestep::calculate()
     {
         ++itn;
         prepare(a, l, pht, points, orient, idx, f, npht, nmatched);
-#if 1
-        of << "Matrix a:" << endl;
-        for (int ii = 0; ii < 4*npht; ++ii)
-        {
-            for (int jj = 0; jj < nc; ++jj)
-                of << a[ii*nc+jj] << ' ';
-            of << endl;
-        }
-        of << endl << "Matrix l:" ;
-        for (int ii = 0; ii < 4*npht; ++ii)
-            of << l[ii] << ' ';
-        of << endl;
-#endif
         lls(4*npht, nc, a, 1, l, s);
         for (i = 0; i < 12; ++i)
             orient[i] += l[i];
@@ -178,21 +172,17 @@ bool Onestep::calculate()
         {
             if (idx[i] == -1)
             { 
-                of << phtindex[i] << ' ';
-                of << points[i*3] << ' ' << points[i*3+1] << ' ';
-                of << points[i*3+2] << ' ' << l[j] << ' ' << l[j+1] << ' ' << l[j+2] << endl;
                 points[i*3] += l[j];
                 points[i*3+1] += l[j+1];
                 points[i*3+2] += l[j+2];
                 j += 3;
             }
         }
-#if 0
-        of << "l:" << endl;
-        for (i = 0; i < 12; ++i)
-            of << l[i] << ' ';
-        of << endl << endl;
-#endif 
+        qDebug() << "Points";
+        for (i = 0; i < npht; ++i)
+        {
+            qDebug() << points[i*3] << points[i*3+1] << points[i*3+2];
+        }
     } while(!exact(l,nc) && itn<maxit);
     qDebug() << "onestep itertations: " << itn;
     qDebug() << "Orient Elements:";
@@ -204,6 +194,12 @@ bool Onestep::calculate()
         qDebug() << m_result[i*3+1] / 1000 << m_result[i*3] / 1000 << m_result[i*3+2] / 1000;
     }
     return true;
+    delete []a;
+    delete []l;
+    delete []idx;
+    delete []ctl;
+    delete []pht;
+    delete []ctlindex;
 }
 
 double Onestep::z_(double* orient, double* ctl)
@@ -220,63 +216,54 @@ void Onestep::prepare(double* a, double* l, double* pht, double* ctl, double* o,
 #define YL pht[4*i+1] 
 #define XR pht[4*i+2]
 #define YR pht[4*i+3]
+
     int nc = 12+(npht-nmatched)*3;
     memset(a, 0, sizeof(double)*4*npht*nc);
+    double* lo = o;
+    double* ro = o+6; 
     int iup = 0;
-    double* ol = o;
-    double* or = o+6; 
-    ofstream of;
-    of.open("debug2.txt");
-    of << endl;
-    for (int i = 0; i < npht; ++i)
-    {
-        of  << idx[i] << ' ' << pht[4*i] << ' ' << pht[4*i+1] << ' '
-            << pht[4*i+2] << ' ' << pht[4*i+3] << ' ' << ctl[3*i] << ' '
-            << ctl[3*i+1] << ' ' << ctl[3*i+2] << endl;
-    }
-    of.close();
     for (int i = 0; i < npht; ++i)
     { 
         // matrix A
         // left
-        a[i*nc*4+0] = (a1(ol)*f + a3(ol)*XL) / z_(ol, ctl+3*i);
-        a[i*nc*4+1] = (b1(ol)*f + b3(ol)*XL) / z_(ol, ctl+3*i);
-        a[i*nc*4+2] = (c1(ol)*f + c3(ol)*XL) / z_(ol, ctl+3*i);
-        a[i*nc*4+3] = YL*sin(ol[4]) - (XL*(XL*cos(ol[5]) - YL*sin(ol[5]))/f
-                                       + f*cos(ol[5])
-                                      ) * cos(ol[4]);
-        a[i*nc*4+4] = -f*sin(ol[5]) - XL*(XL*sin(ol[5])+YL*cos(ol[5]))/f;
+        a[i*nc*4+0] = (a1(lo)*f + a3(lo)*XL) / z_(lo, ctl+3*i);
+        a[i*nc*4+1] = (b1(lo)*f + b3(lo)*XL) / z_(lo, ctl+3*i);
+        a[i*nc*4+2] = (c1(lo)*f + c3(lo)*XL) / z_(lo, ctl+3*i);
+        a[i*nc*4+3] = YL*sin(lo[4]) - (XL*(XL*cos(lo[5]) - YL*sin(lo[5]))/f
+                                       + f*cos(lo[5])
+                                      ) * cos(lo[4]);
+        a[i*nc*4+4] = -f*sin(lo[5]) - XL*(XL*sin(lo[5])+YL*cos(lo[5]))/f;
         a[i*nc*4+5] = YL;
 
-        a[i*nc*4+nc+0] = (a2(ol)*f + a3(ol)*YL) / z_(ol, ctl+3*i);
-        a[i*nc*4+nc+1] = (b2(ol)*f + b3(ol)*YL) / z_(ol, ctl+3*i);
-        a[i*nc*4+nc+2] = (c2(ol)*f + c3(ol)*YL) / z_(ol, ctl+3*i);
-        a[i*nc*4+nc+3] = -XL*sin(ol[4]) - (YL*(XL*cos(ol[5])-YL*sin(ol[5]))/f
-                                           -f*sin(ol[5])
-                                          )*cos(ol[4]);
-        a[i*nc*4+nc+4] = -f*cos(ol[5]) - YL*(XL*sin(ol[5])+YL*cos(ol[5]))/f;
+        a[i*nc*4+nc+0] = (a2(lo)*f + a3(lo)*YL) / z_(lo, ctl+3*i);
+        a[i*nc*4+nc+1] = (b2(lo)*f + b3(lo)*YL) / z_(lo, ctl+3*i);
+        a[i*nc*4+nc+2] = (c2(lo)*f + c3(lo)*YL) / z_(lo, ctl+3*i);
+        a[i*nc*4+nc+3] = -XL*sin(lo[4]) - (YL*(XL*cos(lo[5])-YL*sin(lo[5]))/f
+                                           -f*sin(lo[5])
+                                          )*cos(lo[4]);
+        a[i*nc*4+nc+4] = -f*cos(lo[5]) - YL*(XL*sin(lo[5])+YL*cos(lo[5]))/f;
         a[i*nc*4+nc+5] = -XL;
 
         // right 
-        a[i*nc*4+nc*2+6] = (a1(or)*f + a3(or)*XR) / z_(or, ctl+3*i);
-        a[i*nc*4+nc*2+7] = (b1(or)*f + b3(or)*XR) / z_(or, ctl+3*i);
-        a[i*nc*4+nc*2+8] = (c1(or)*f + c3(or)*XR) / z_(or, ctl+3*i);
-        a[i*nc*4+nc*2+9] = YR*sin(or[4]) - (XR*(XR*cos(or[5]) - YR*sin(or[5]))/f
-                                       + f*cos(or[5])
-                                      ) * cos(or[4]);
-        a[i*nc*4+nc*2+10] = -f*sin(or[5]) - XR*(XR*sin(or[5])+YR*cos(or[5]))/f;
+        a[i*nc*4+nc*2+6] = (a1(ro)*f + a3(ro)*XR) / z_(ro, ctl+3*i);
+        a[i*nc*4+nc*2+7] = (b1(ro)*f + b3(ro)*XR) / z_(ro, ctl+3*i);
+        a[i*nc*4+nc*2+8] = (c1(ro)*f + c3(ro)*XR) / z_(ro, ctl+3*i);
+        a[i*nc*4+nc*2+9] = YR*sin(ro[4]) - (XR*(XR*cos(ro[5]) - YR*sin(ro[5]))/f
+                                       + f*cos(ro[5])
+                                      ) * cos(ro[4]);
+        a[i*nc*4+nc*2+10] = -f*sin(ro[5]) - XR*(XR*sin(ro[5])+YR*cos(ro[5]))/f;
         a[i*nc*4+nc*2+11] = YR;
 
-        a[i*nc*4+nc*3+6] = (a2(or)*f + a3(or)*YR) / z_(or, ctl+3*i);
-        a[i*nc*4+nc*3+7] = (b2(or)*f + b3(or)*YR) / z_(or, ctl+3*i);
-        a[i*nc*4+nc*3+8] = (c2(or)*f + c3(or)*YR) / z_(or, ctl+3*i);
-        a[i*nc*4+nc*3+9] = -XR*sin(or[4]) - (YR*(XR*cos(or[5])-YR*sin(or[5]))/f
-                                           -f*sin(or[5])
-                                          )*cos(or[4]);
-        a[i*nc*4+nc*3+10] = -f*cos(or[5]) - YR*(XR*sin(or[5])+YR*cos(or[5]))/f;
+        a[i*nc*4+nc*3+6] = (a2(ro)*f + a3(ro)*YR) / z_(ro, ctl+3*i);
+        a[i*nc*4+nc*3+7] = (b2(ro)*f + b3(ro)*YR) / z_(ro, ctl+3*i);
+        a[i*nc*4+nc*3+8] = (c2(ro)*f + c3(ro)*YR) / z_(ro, ctl+3*i);
+        a[i*nc*4+nc*3+9] = -XR*sin(ro[4]) - (YR*(XR*cos(ro[5])-YR*sin(ro[5]))/f
+                                           -f*sin(ro[5])
+                                          )*cos(ro[4]);
+        a[i*nc*4+nc*3+10] = -f*cos(ro[5]) - YR*(XR*sin(ro[5])+YR*cos(ro[5]))/f;
         a[i*nc*4+nc*3+11] = -XR;
 
-        // matrix B. also stored in a
+        // matrix B. also stroed in a
         if (idx[i] == -1)       // unknown points
         {
             // left
@@ -299,22 +286,22 @@ void Onestep::prepare(double* a, double* l, double* pht, double* ctl, double* o,
             ++iup;
         }
 
-        l[i*4] = XL + f * (a1(ol)*(ctl[3*i]-ol[0]) + 
-                           b1(ol)*(ctl[3*i+1]-ol[1]) + 
-                           c1(ol)*(ctl[3*i+2]-ol[2])
+        l[i*4] = XL + f * (a1(lo)*(ctl[3*i]-lo[0]) + 
+                           b1(lo)*(ctl[3*i+1]-lo[1]) + 
+                           c1(lo)*(ctl[3*i+2]-lo[2])
                           ) / z_(o, ctl+3*i);
-        l[i*4+1] = YL + f * (a2(ol)*(ctl[3*i]-ol[0]) + 
-                             b2(ol)*(ctl[3*i+1]-ol[1]) + 
-                             c2(ol)*(ctl[3*i+2]-ol[2])
-                            ) / z_(ol, ctl+3*i);
-        l[i*4+2] = XR + f * (a1(or)*(ctl[3*i]-or[0]) + 
-                           b1(or)*(ctl[3*i+1]-or[1]) + 
-                           c1(or)*(ctl[3*i+2]-or[2])
+        l[i*4+1] = YL + f * (a2(lo)*(ctl[3*i]-lo[0]) + 
+                             b2(lo)*(ctl[3*i+1]-lo[1]) + 
+                             c2(lo)*(ctl[3*i+2]-lo[2])
+                            ) / z_(lo, ctl+3*i);
+        l[i*4+2] = XR + f * (a1(ro)*(ctl[3*i]-ro[0]) + 
+                           b1(ro)*(ctl[3*i+1]-ro[1]) + 
+                           c1(ro)*(ctl[3*i+2]-ro[2])
                           ) / z_(o, ctl+3*i);
-        l[i*4+3] = YR + f * (a2(or)*(ctl[3*i]-or[0]) + 
-                             b2(or)*(ctl[3*i+1]-or[1]) + 
-                             c2(or)*(ctl[3*i+2]-or[2])
-                            ) / z_(or, ctl+3*i);
+        l[i*4+3] = YR + f * (a2(ro)*(ctl[3*i]-ro[0]) + 
+                             b2(ro)*(ctl[3*i+1]-ro[1]) + 
+                             c2(ro)*(ctl[3*i+2]-ro[2])
+                            ) / z_(ro, ctl+3*i);
    }
 }
 

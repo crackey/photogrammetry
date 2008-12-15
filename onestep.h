@@ -13,6 +13,8 @@ public:
     ~Onestep();
 
     bool calculate();
+    int orient(double** o);
+    int result(int** index, double** r);
 
 private:
     bool exact(double* x, int n);
@@ -22,6 +24,7 @@ private:
     double* m_result;
     double m_orient[12];
     int* m_index;
+    int m_pnum;
     QString m_ctl;
     QString m_pht;
 };

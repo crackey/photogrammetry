@@ -1,12 +1,12 @@
 <ui version="4.0" >
- <class>OrientationWidgetBase</class>
- <widget class="QWidget" name="OrientationWidgetBase" >
+ <class>OnestepWidgetBase</class>
+ <widget class="QWidget" name="OnestepWidgetBase" >
   <property name="geometry" >
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>466</width>
-    <height>433</height>
+    <width>664</width>
+    <height>468</height>
    </rect>
   </property>
   <property name="windowTitle" >
@@ -29,39 +29,49 @@
        <enum>Qt::SolidLine</enum>
       </property>
       <property name="rowCount" >
-       <number>5</number>
+       <number>6</number>
       </property>
       <property name="columnCount" >
-       <number>1</number>
+       <number>2</number>
       </property>
       <row>
        <property name="text" >
-        <string>u</string>
+        <string>Xs(mm)</string>
        </property>
       </row>
       <row>
        <property name="text" >
-        <string>v</string>
+        <string>Ys(mm)</string>
        </property>
       </row>
       <row>
        <property name="text" >
-        <string>φ</string>
+        <string>Zs(mm)</string>
        </property>
       </row>
       <row>
        <property name="text" >
-        <string>ω</string>
+        <string>φ(rad)</string>
        </property>
       </row>
       <row>
        <property name="text" >
-        <string>κ</string>
+        <string>ω(rad)</string>
+       </property>
+      </row>
+      <row>
+       <property name="text" >
+        <string>κ(rad)</string>
        </property>
       </row>
       <column>
        <property name="text" >
-        <string>值</string>
+        <string>左相片</string>
+       </property>
+      </column>
+      <column>
+       <property name="text" >
+        <string>右相片</string>
        </property>
       </column>
      </widget>

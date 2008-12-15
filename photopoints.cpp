@@ -124,8 +124,8 @@ int PhotoPoints::data(int flag, double* focus, double** xyval, int** index) cons
         double* phtdata;
         double scalex;
         double scaley;
-        scalex = m_fiducial[2]/m_fiducial[0];
-        scaley = m_fiducial[3]/m_fiducial[1];
+        scalex = m_fiducial[0]/m_fiducial[2];
+        scaley = m_fiducial[1]/m_fiducial[3];
         np = m_points.size();
         switch (flag)
         {

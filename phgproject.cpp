@@ -102,6 +102,11 @@ Orientation* PHGProject::orientation(QString key)
     return m_orientation;
 }
 
+Onestep* PHGProject::onestep(QString key)
+{
+    return m_onestep;
+}
+
 QString PHGProject::curPhotoPoints()
 {
     return m_curPhotoPoints;
@@ -120,6 +125,11 @@ QString PHGProject::curControlPoints()
 QString PHGProject::curIntersection()
 {
     return m_curIntersection;
+}
+
+QString PHGProject::curOnestep()
+{
+    return m_curOnestep;
 }
 
 void PHGProject::setCurControlPoints(QString filepath)
@@ -230,11 +240,12 @@ void PHGProject::onestep()
     QString key = m_curControlPoints + m_curPhotoPoints;
     if (m_onestep != 0)
         delete m_onestep;
-    Onestep* m_onestep = new Onestep(m_curControlPoints, m_curPhotoPoints, this);
+    m_onestep = new Onestep(m_curControlPoints, m_curPhotoPoints, this);
     if (m_onestep->calculate())
     {
         m_curOnestep = key;
         emit onestepFinished(true);
+        emit onestepAvailable(false);
     }
     else 
         emit onestepFinished(false);

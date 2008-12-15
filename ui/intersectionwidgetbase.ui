@@ -18,7 +18,7 @@
      <property name="orientation" >
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QWidget" name="" >
+     <widget class="QWidget" name="layoutWidget" >
       <layout class="QHBoxLayout" name="horizontalLayout" >
        <item>
         <widget class="QTableWidget" name="orientTable" >
@@ -54,17 +54,17 @@
          </row>
          <row>
           <property name="text" >
-           <string>φ(°)</string>
+           <string>φ(rad)</string>
           </property>
          </row>
          <row>
           <property name="text" >
-           <string>ω(°)</string>
+           <string>ω(rad)</string>
           </property>
          </row>
          <row>
           <property name="text" >
-           <string>κ(°)</string>
+           <string>κ(rad)</string>
           </property>
          </row>
          <column>

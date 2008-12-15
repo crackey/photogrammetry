@@ -9,6 +9,7 @@
 #include "controlpointsmodel.h"
 #include "intersectionwidget.h"
 #include "orientationwidget.h"
+#include "onestepwidget.h"
 //#include "intersection.h"
 
 using namespace std;
@@ -42,6 +43,7 @@ Photogrammetry::Photogrammetry()
     connect(m_prj, SIGNAL(forwardFinished(bool)), this, SLOT(updateForwardView(bool)));
     connect(m_prj, SIGNAL(relativeFinished(bool)), this, SLOT(updateRelativeView(bool)));
     connect(m_prj, SIGNAL(absoluteFinished(bool)), this, SLOT(updateAbsoluteView(bool)));
+    connect(m_prj, SIGNAL(onestepFinished(bool)), this, SLOT(updateOnestepView(bool)));
 //    connect(this, SIGNAL(backwardAvailable(bool)), ui.intersectionBackwardAction, SLOT(setEnabled(bool)));
 //    connect(this, SIGNAL(forwardAvailable(bool)), ui.intersectionForwardAction, SLOT(setEnabled(bool)));
 }
@@ -99,7 +101,15 @@ void Photogrammetry::on_onestepAction_triggered()
 }
 
 void Photogrammetry::on_helpAboutAction_triggered()
-{}
+{
+    QMessageBox msgBox;
+    msgBox.setText(tr("数字摄影测量学作业\n"
+                      "\n作者：杨波(oakyangnjucn@gmail.com)\n"
+                      "\n版权：This software is in the public domain, "
+                      "\ndo with it what you wish."
+                      "\nContact the auther to get the source if you want."));
+    msgBox.exec(); 
+}
 
 // end of auto-connected slots
 
@@ -112,6 +122,13 @@ void Photogrammetry::addView(QString filepath)
     else if (filepath.endsWith(".ctl"))
     {
         static_cast<ControlPointsModel*>(ui.controlPointsView->model())->setRoot(m_prj->controlPoints(filepath));       
+    }
+    QTabWidget* tab = ui.tabWidget;
+    int n = tab->count();
+    tab->setCurrentIndex(0);
+    for (int i = 1; i < n; ++i)
+    {
+        tab->removeTab(1);
     }
 }
 
@@ -228,6 +245,33 @@ void Photogrammetry::updateAbsoluteView(bool t)
             ortWidget->updateAbsolute();
             tab->setCurrentWidget(ortWidget);
         }
+    }
+}
+
+void Photogrammetry::updateOnestepView(bool t)
+{
+    if (t)
+    {
+        QTabWidget* tab = ui.tabWidget;
+        QString tabLabel;
+        tabLabel = tr("一步法");
+        OnestepWidget* ostWidget = 0;
+        for (int i = 0; i < tab->count(); ++i)
+        {
+            if (tabLabel == tab->tabText(i))
+            {
+                ostWidget = (OnestepWidget*)tab->widget(i);
+                break;
+            }
+        }
+        if (ostWidget == 0)
+        {
+            ostWidget = new OnestepWidget(m_prj->onestep(m_prj->curOnestep()));
+            tab->addTab(ostWidget,  tabLabel);
+        }
+        ostWidget->setOnestep(m_prj->onestep(m_prj->curOnestep()));
+        ostWidget->update();
+        tab->setCurrentWidget(ostWidget);
     }
 }
 

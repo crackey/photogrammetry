@@ -1,6 +1,6 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 PROJECT(photogrammetry)
-SET(CMAKE_BUILD_TYPE DEBUG)
+SET(CMAKE_BUILD_TYPE RELEASE)
 
 FIND_PACKAGE(Qt4 REQUIRED)
 include(UseQt4)
@@ -18,6 +18,7 @@ set(QTMOC_SRCS
     orientationwidget.h
     orientation.h
     onestep.h
+    onestepwidget.h
     )
 QT4_WRAP_CPP(QT_MOC_SRCS ${QTMOC_SRCS})
 
@@ -25,6 +26,7 @@ set(QTUIC_SRCS
     ui/photogrammetrybase.ui
     ui/intersectionwidgetbase.ui
     ui/orientationwidgetbase.ui
+    ui/onestepwidgetbase.ui
     )
 QT4_WRAP_UI(QT_UIC_HEADERS ${QTUIC_SRCS})
 
@@ -35,7 +37,6 @@ INCLUDE_DIRECTORIES(
     ${CMAKE_CURRENT_SOURCE_DIR} 
     ${CMAKE_CURRENT_BINARY_DIR}
     "d:/dev/include"
-    "~/dev/"
     )
 INCLUDE(
     ${QT_USE_FILE}
@@ -58,6 +59,7 @@ SET(_HEADERS
     orientation.h
     orientationwidget.h
     onestep.h
+    onestepwidget.h
     )
 SET(_SRCS
     main.cpp
@@ -75,6 +77,7 @@ SET(_SRCS
     orientation.cpp
     orientationwidget.cpp
     onestep.cpp
+    onestepwidget.cpp
     )
 SET(SRCS
     ${_HEADERS}
@@ -84,15 +87,11 @@ SET(SRCS
     )
 
 # use WIN32 cause /SUBSYSTEM:WINDOWS, or a console built
-ADD_EXECUTABLE(photogrammetry 
+ADD_EXECUTABLE(photogrammetry WIN32
     ${SRCS}
     )
 
 # lapack libraries
-IF(WIN32)
-    SET(LIBRARYS blas_win32 lapack_win32)
-ELSE(WIN32)
-    SET(LIBRARYS  blas  lapack  )
-ENDIF(WIN32)
+SET(LIBRARYS blas_win32 lapack_win32)
 
 TARGET_LINK_LIBRARIES(photogrammetry ${QT_LIBRARIES} ${LIBRARYS})

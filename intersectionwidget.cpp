@@ -39,14 +39,7 @@ void IntersectionWidget::updateBackward()
         {
             item = new QTableWidgetItem();
             item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-            if (j > 2)  
-            {
-                item->setData(Qt::DisplayRole, QString("%1").arg(orient[i*6+j]*180/M_PI, 0, 'f', 3));
-            }
-            else
-            {
-                item->setData(Qt::DisplayRole, QString("%1").arg(orient[i*6+j], 0, 'f', 3));
-            }
+            item->setData(Qt::DisplayRole, QString("%1").arg(orient[i*6+j], 0, 'f', 3));
             orientTable->setItem(j, i, item);
         }
     }
@@ -75,8 +68,6 @@ void IntersectionWidget::updateForward()
             item->setData(Qt::DisplayRole, QString("%1").arg(index[i]));
             forwardTable->setItem(i, 0, item);
     }
-    //for (int i = 1; i < 4; ++i)
-    //{
         for (int j = 0; j < np; ++j)
         {
             item = new QTableWidgetItem();
@@ -94,6 +85,5 @@ void IntersectionWidget::updateForward()
             item->setData(Qt::DisplayRole, QString("%1").arg(data[3*j+2]/1000.0, 0, 'f', 3));
             forwardTable->setItem(j, 3, item);
         }
-    //}
 }
 

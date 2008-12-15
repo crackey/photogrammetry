@@ -33,6 +33,7 @@ public slots:
     void updateForwardView(bool t);
     void updateAbsoluteView(bool t);
     void updateRelativeView(bool t);
+    void updateOnestepView(bool t);
     void syncFiducial(QString key);
 
 signals:

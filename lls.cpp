@@ -15,6 +15,8 @@ int lls(integer m, integer n, doublereal* aa, integer nrhs, doublereal* b, doubl
     integer lda = mmax, liwork=3*mmax*nlvl+11*mmax, lwork;
     integer maxmn = max(m, n);
     lwork=(12*maxmn+50*maxmn+8*maxmn*nlvl+maxmn*nrhs+26*26)*2;
+    liwork *= 2;
+    lwork *= 2;
     doublereal rcond;
     integer info, rank;
     doublereal* a = new doublereal[lda*nmax];

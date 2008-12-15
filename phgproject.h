@@ -24,10 +24,12 @@ public:
     ControlPoints* controlPoints(QString key);
     Intersection* intersection(QString key);
     Orientation* orientation(QString key);
+    Onestep* onestep(QString key);
     QString curPhotoPoints();
     QString curControlPoints();
     QString curIntersection();
     QString curOrientation();
+    QString curOnestep();
 
 public slots:
     void openfile(QString filepath);
