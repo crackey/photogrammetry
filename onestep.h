@@ -17,8 +17,8 @@ public:
 private:
     bool exact(double* x, int n);
     double z_(double* orient, double* ctl);
-    void ma(double* a, double* pht, double* ctl, double* o, int nc, int ictl, 
-            int iup, double f, int npht, int nmatched, int i);
+    void prepare(double* a, double*l, double* pht, double* ctl, double* o, int* idx, 
+            double f, int npht, int nmatched);
     double* m_result;
     double m_orient[12];
     int* m_index;
