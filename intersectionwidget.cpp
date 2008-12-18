@@ -32,15 +32,24 @@ void IntersectionWidget::updateBackward()
     }
     QTableWidget* orientTable = ui.orientTable;
     QTableWidgetItem* item = 0;
-    double const* orient = m_intersection->orient();
+    double* orient;
+    double* orient_residual;
+    m_intersection->orient(&orient, &orient_residual);
     for (int i = 0; i < 2; ++i)
     {
         for (int j = 0; j < 6; ++j)
         {
             item = new QTableWidgetItem();
             item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-            item->setData(Qt::DisplayRole, QString("%1").arg(orient[i*6+j], 0, 'f', 3));
-            orientTable->setItem(j, i, item);
+            item->setData(Qt::DisplayRole, QString("%1").arg(orient[i*6+j]));
+            orientTable->setItem(j, i*2, item);
+        }
+                for (int j = 0; j < 6; ++j)
+        {
+            item = new QTableWidgetItem();
+            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+            item->setData(Qt::DisplayRole, QString("%1").arg(orient_residual[i*6+j]));
+            orientTable->setItem(j, i*2+1, item);
         }
     }
 

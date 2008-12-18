@@ -14,6 +14,7 @@ public:
 
     int result(int** index, double** data) const;
     int relativeOrientElements(double** data, double** s) const;
+    int absoluteOrientElements(double** data, double** s) const;
     bool relative();
     bool absolute();
 
@@ -24,9 +25,10 @@ private:
     double m_orient[12]; // 0-5 was orient elements for left photo which
                          // should normally be 0, 6-11 for right photo
     double m_limit;
-    double* m_rol;    // relative orient elements.
-    double* m_rols;   // relative orient elements residual.
+    double m_rol[5];    // relative orient elements.
+    double m_rols[5];   // relative orient elements residual.
     double m_aol[7];    // absolute orient elements.
+    double m_aols[7];
     double* m_modelpoints;
     double* m_result;
     int* m_index;

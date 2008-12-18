@@ -18,21 +18,33 @@ Onestep::Onestep(QString ctl, QString pht, QObject* parent)
     m_pht = pht;
     m_result = 0;
     m_index = 0;
+    m_residual = 0;
+    m_isctl = 0;
 }
 
 Onestep::~Onestep()
 {
-
+    if (m_result != 0)
+        delete []m_result;
+    if (m_index != 0)
+        delete []m_index;
+    if (m_residual != 0)
+        delete []m_residual;
+    if (m_isctl = 0)
+        delete []m_isctl;
 }
-int Onestep::orient(double** o)
+int Onestep::orient(double** o, double** os)
 {
     *o = m_orient;
+    *os = m_residual;
     return 12;
 }
 
-int Onestep::result(int** index, double** r)
+int Onestep::result(int** index, int** isctl, double** r, double** rs)
 {
+    *isctl = m_isctl;
     *r = m_result;
+    *rs = m_residual+12;
     *index = m_index;
     return m_pnum;
 }
@@ -58,12 +70,15 @@ bool Onestep::calculate()
     int nmatched = 0; // number of matched points
     // the keys was guaranteed in increasing roder
     int* idx = new int[npht];      // matched control point indexes. -1 for unknow points.
+    m_isctl = new int[npht];
+    memset(m_isctl, 0, sizeof(int)*npht);
     for (i = 0; i < npht; idx[i++] = -1)
         ;
     for (i = 0, j = 0; i<npht && j<nctl; )
     {
         if (phtindex[i] == ctlindex[j])
         {
+            m_isctl[i] = 1;
             idx[i] = j;
             ++nmatched;
             ++i;
@@ -154,27 +169,29 @@ bool Onestep::calculate()
                  << points[i*3] << points[i*3+1] << points[i*3+2];
     }
 
-    int maxit = 1;
+    int maxit = 1; // the lapack dgelsd routine gives a best answer, so one iteration is enough.
     int itn = 0;
     int nc = nunknown*3 + 12; // number of cloumns of matrix a
     double* a = new double[4*npht*nc]; // matrix A and B
     double* l = new double[4*npht];              // matrix l
     //double* s = new double[3*nunknown+12];
+    double* x = new double[4*npht];
     double s[24] = {0.0};
     do
     {
         ++itn;
         prepare(a, l, pht, points, orient, idx, f, npht, nmatched);
-        lls(4*npht, nc, a, 1, l, s);
+        memcpy(x, l, sizeof(double)*4*npht);
+        lls(4*npht, nc, a, 1, x, s);
         for (i = 0; i < 12; ++i)
-            orient[i] += l[i];
+            orient[i] += x[i];
         for (i = 0, j = 12; i < npht; ++i)
         {
             if (idx[i] == -1)
             { 
-                points[i*3] += l[j];
-                points[i*3+1] += l[j+1];
-                points[i*3+2] += l[j+2];
+                points[i*3] += x[j];
+                points[i*3+1] += x[j+1];
+                points[i*3+2] += x[j+2];
                 j += 3;
             }
         }
@@ -184,6 +201,10 @@ bool Onestep::calculate()
             qDebug() << points[i*3] << points[i*3+1] << points[i*3+2];
         }
     } while(!exact(l,nc) && itn<maxit);
+            
+    m_residual = new double[nc];
+    residual(&m_residual, a, x, l, 4*npht, nc);
+
     qDebug() << "onestep itertations: " << itn;
     qDebug() << "Orient Elements:";
     qDebug() << "Left:" << m_orient[0] << m_orient[1] << m_orient[2] << m_orient[3] << m_orient[4] << m_orient[5];

@@ -174,7 +174,7 @@ bool Intersection::backward()
     m_orient[1] /= lnumPoints;
     m_orient[2] = m_orient[2]/lnumPoints + 1e3*lfocus;
     m_orient[3] = m_orient[4] = m_orient[5] = 0.0;
-    int left = backward_impl(lphtdata, lctldata, m_orient, lfocus, lnumPoints);
+    int left = backward_impl(lphtdata, lctldata, m_orient, lfocus, lnumPoints, 0);
     delete []lphtdata;
     delete []lctldata;
     
@@ -200,7 +200,7 @@ bool Intersection::backward()
     m_orient[7] /= rnumPoints;
     m_orient[8] = m_orient[2]/rnumPoints + 1e3*rfocus;
     m_orient[9] = m_orient[10] = m_orient[11] = 0.0;
-    int right = backward_impl(rphtdata, rctldata, m_orient+6, rfocus, rnumPoints);
+    int right = backward_impl(rphtdata, rctldata, m_orient+6, rfocus, rnumPoints, 1);
     delete []rphtdata;
     delete []rctldata;
 
@@ -215,15 +215,16 @@ bool Intersection::backward()
     return false;
 }
 
-int Intersection::backward_impl(double* pht, double* ctl, double* orient, double f, int n)
+int Intersection::backward_impl(double* pht, double* ctl, double* orient, double f, int n, int side)
 {
     double* a = new double[12*n];
     double* l = new double[2*n];
+
+    double* x = new double[2*n];
     double s[6];
-    l[0] = 1000;
     int maxit = 30;
-    int it = 0;
-    while (orientNotExact(l) && it < maxit)
+    int it = 0;    
+    do
     {
         ++it;
         for (int i = 0; i < n; ++i)
@@ -238,15 +239,20 @@ int Intersection::backward_impl(double* pht, double* ctl, double* orient, double
                                          c2(orient)*(ctl[3*i+2]-orient[2])
                                         ) / z_(orient, ctl, i);
         }
-        lls(2*n, 6, a, 1, l, s);
+        memcpy(x, l, sizeof(double)*2*n);
+        lls(2*n, 6, a, 1, x, s);
         for (int i = 0; i < 6; ++i)
         {
-            orient[i] += l[i];
+            orient[i] += x[i];
         }
-    }
+    } while (orientNotExact(x) && it < maxit);
+    double* r = (side == 0) ? m_orients : m_orients+6;
+    residual(&r, a, x, l, 2*n, 6);
+
     qDebug() << "\n" << "Backward Iterations: " << it;
     delete []a;
     delete []l;
+    delete []x;
     return 0;
 }
 
@@ -326,7 +332,7 @@ int Intersection::backwardData(double** ppht, double** pctl, double* focus, int 
     double* mpd = new double[2*np]; // matched photo data
     double* mpc = new double[3*np]; // matched control data
     np = 0;
-    for (i = 0, j = 0; i<nctlp && j<nphtp; )
+    for (i = 0, j = 0; i<nphtp && j<nctlp; )
     {
         if (phtindex[i] == ctlindex[j])
         {
@@ -363,7 +369,9 @@ int Intersection::forwardResult(int** index, double** result)
     return m_numPhtPt;
 }
 
-double const* Intersection::orient() const
+int Intersection::orient(double** o, double** os)
 {
-    return m_orient;
+    *o = m_orient;
+    *os = m_orients;
+    return 12;
 }

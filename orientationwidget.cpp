@@ -30,7 +30,7 @@ void OrientationWidget::updateRelative()
         qDebug() << "No orientation";
         return;
     }
-    QTableWidget* orientTable = ui.orientTable;
+    QTableWidget* orientTable = ui.relativeOrientTable;
     QTableWidgetItem* item = 0;
     double *data = 0;
     double *s = 0;
@@ -43,12 +43,11 @@ void OrientationWidget::updateRelative()
         item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
         item->setData(Qt::DisplayRole, QString("%1").arg(data[i]));
         orientTable->setItem(i, 0, item);
-#if 0
+
         item = new QTableWidgetItem();
         item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
         item->setData(Qt::DisplayRole, QString("%1").arg(s[i]));
         orientTable->setItem(i, 1, item);
-#endif 
     }
 }
 
@@ -59,8 +58,31 @@ void OrientationWidget::updateAbsolute()
         qDebug() << "No orientation";
         return;
     }
+
+    // orient elements
+    QTableWidget* orientTable = ui.absoluteOrientTable;
+    QTableWidgetItem* item = 0; 
+    double *orient = 0;
+    double *orient_residual = 0;
+    int n = 0;
+    n = m_orientation->absoluteOrientElements(&orient, &orient_residual);
+    orientTable->setRowCount(n);
+    for (int i = 0; i < n; ++i)
+    {
+        item = new QTableWidgetItem();
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        item->setData(Qt::DisplayRole, QString("%1").arg(orient[i]));
+        orientTable->setItem(i, 0, item);
+
+        item = new QTableWidgetItem();
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        item->setData(Qt::DisplayRole, QString("%1").arg(orient_residual[i]));
+        orientTable->setItem(i, 1, item);
+    }
+
+    // point data
     QTableWidget* resultTable = ui.resultTable;
-    QTableWidgetItem* item = 0;
+
     double *data = 0;
     int *index = 0;
     int np = 0;

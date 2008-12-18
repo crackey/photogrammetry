@@ -15,49 +15,6 @@ size_t PhotoPoints::count() const
     return m_pointNum;
 }
 
-#if 0
-int PhotoPoints::data(int flag, double* focus, map<int, vector<double> >* pht)
-{
-    int np = 0;
-    *focus = m_focus;
-    if (pht != 0)
-    {
-        np = m_points.size();
-        pht->reserve(np);
-        vector<double> tmp;
-        switch (flag)
-        {
-        case Left:
-            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
-            {
-                tmp->insert(itp->second.x1 - 100);
-                tmp->insert(100 - itp->second.y1);
-            } 
-            break;
-        case Right:
-            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
-            {
-                tmp->insert(itp->second.x1-100 - itp->second.x2);
-                tmp->insert(100-itp->second.y1 + 10 - itp->second.y2);
-            } 
-            break;
-        case Left | Right:
-            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
-            {
-                tmp->insert(itp->second.x1 - 100);
-                tmp->insert(100 - itp->second.y1);
-                tmp->insert(tmp->at(0) - itp->second.x2);
-                tmp->insert(tmp->at(1) + 10 - itp->second.y2);
-            } 
-            break;
-        default:
-            break;
-        }
-    
-    }
-}
-#endif
-
 int PhotoPoints::data(int flag, double* focus, vector<double>* pht, vector<int>* index) const
 {
     int np = 0;        // number of points retrived.
@@ -124,8 +81,8 @@ int PhotoPoints::data(int flag, double* focus, double** xyval, int** index) cons
         double* phtdata;
         double scalex;
         double scaley;
-        scalex = m_fiducial[0]/m_fiducial[2];
-        scaley = m_fiducial[1]/m_fiducial[3];
+        scalex = m_fiducial[2]/m_fiducial[0];
+        scaley = m_fiducial[3]/m_fiducial[1];
         np = m_points.size();
         switch (flag)
         {

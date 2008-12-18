@@ -18,10 +18,10 @@ Orientation::Orientation(QString ctl, QString pht, QObject* parent)
     m_index = 0;
     m_limit = 3e-5;
     m_result = 0;
-    m_rol = new double[5];
-    m_rols = new double[5];
     memset(m_rols, 0, sizeof(double)*5);
     memset(m_rol, 0, sizeof(double)*5); 
+    memset(m_aols, 0, sizeof(double)*7);
+    memset(m_aol, 0, sizeof(double)*7); 
     memset(m_orient, 0, sizeof(double)*12);
 }
 
@@ -37,9 +37,16 @@ int Orientation::result(int** index, double** data) const
 
 int Orientation::relativeOrientElements(double** data, double** s) const
 {
-    *s = m_rols;
-    *data = m_rol;
+    *s = (double*)m_rols;
+    *data = (double*)m_rol;
     return 5;
+}
+
+int Orientation::absoluteOrientElements(double** data, double** s) const
+{
+    *s = (double*)m_aols;
+    *data = (double*)m_aol;
+    return 7;
 }
 
 bool Orientation::exact(double* data)
@@ -68,6 +75,7 @@ bool Orientation::relative()
 
     double* a = new double[np*5];
     double* l = new double[np];
+	double* ll = new double[np];
     double* o = m_orient;
     int maxit = 30;
     int itn = 0;
@@ -115,7 +123,9 @@ bool Orientation::relative()
             a[5*i+4] = X2 * N2;
             l[i] = Q;
         }
+		memcpy(ll, l, sizeof(double)*np);
         lls(np, 5, a, 1, l, m_rols);
+
         for (int i = 0; i < 5; ++i)
         {
             m_rol[i] += l[i];
@@ -125,7 +135,8 @@ bool Orientation::relative()
             o[7+i] += l[i];
         }
     } while (!exact(l) && (itn < maxit));
-
+    double* r = m_rols;
+    residual(&r, a, l, ll, np, 5);
     qDebug() << "Relative Orientation, number of iterations:" << itn;
     for (int i = 6; i < 12; ++i)
         qDebug() << m_orient[i];
@@ -207,6 +218,7 @@ bool Orientation::absolute()
     double* a = new double[7*3*nm];
     memset(a, 0, sizeof(double)*21*nm);
     double* l = new double[3*nm];
+    double* ll = new double[3*nm];
     double s[7];
     double R[9];
     int maxit = 30;
@@ -243,15 +255,15 @@ bool Orientation::absolute()
             a[i*21+18] = pp[0];
             a[i*21+19] = pp[1];
         }
-        //for (int ii = 0; ii < 3*nm; ++ii)
-        //    qDebug() << a[ii*7] << a[ii*7+1] << a[ii*7+2] << a[ii*7+3] << a[ii*7+4] 
-        //<< a[ii*7+5] << a[ii*7+6];
+        memcpy(ll, l, sizeof(double)*3*nm);
         lls(3*nm, 7, a, 1, l, s);
         for (i = 0; i < 7; ++i)
         {
             m_aol[i] += l[i];
         }
     } while(itn < maxit && !exact(l));
+    double* r = m_aols;
+    residual(&r, a, l, ll, 3*nm, 7);
     qDebug() << "Absolute orientation iterations: " << itn;
 
     m_result = new double[3*np];
