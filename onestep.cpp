@@ -2,6 +2,9 @@
 #include <map>
 #include <cmath>
 
+#include <iostream>
+#include <fstream>
+
 #include "controlpoints.h"
 #include "photopoints.h"
 #include "transform.h"
@@ -16,320 +19,263 @@ Onestep::Onestep(QString ctl, QString pht, QObject* parent)
 {
     m_ctl = ctl;
     m_pht = pht;
-    m_result = 0;
-    m_index = 0;
-    m_residual = 0;
-    m_isctl = 0;
+    for (int i = 0; i < 12; ++i)
+        m_orient.push_back(0);
 }
 
 Onestep::~Onestep()
 {
-    if (m_result != 0)
-        delete []m_result;
-    if (m_index != 0)
-        delete []m_index;
-    if (m_residual != 0)
-        delete []m_residual;
-    if (m_isctl = 0)
-        delete []m_isctl;
 }
-int Onestep::orient(double** o, double** os)
+int Onestep::orient(vector<double>* o, vector<double>* os)
 {
     *o = m_orient;
-    *os = m_residual;
+    *os = m_orient_residual;
     return 12;
 }
 
-int Onestep::result(int** index, int** isctl, double** r, double** rs)
+int Onestep::result(map<int, Point>* result, map<int, Point>* residual)
 {
-    *isctl = m_isctl;
-    *r = m_result;
-    *rs = m_residual+12;
-    *index = m_index;
-    return m_pnum;
+    *result = m_result;
+    *residual = m_result_residual;
+    return m_numPoint;
 }
 
 bool Onestep::calculate()
 {
-    ControlPoints* pctl = static_cast<PHGProject*>(parent())->controlPoints(m_ctl);
-    PhotoPoints* ppht = static_cast<PHGProject*>(parent())->photoPoints(m_pht);
-    double* pht = 0;
-    int* phtindex = 0;
-    double* ctl = 0;
-    int* ctlindex = 0;
+    PHGProject* prj = (PHGProject*)parent();
+    PhotoPoints* tpht = prj->photoPoints(m_pht);
+    ControlPoints* tctl = prj->controlPoints(m_ctl);
     double f;    // focus
-    int npht;               // total number of points
-    npht = ppht->data(3, &f, &pht, &phtindex);
-    m_pnum = npht;
-    int nctl;                // number of control points
-    nctl = pctl->data(&ctl, &ctlindex);
+    map<int, PhotoPoint> pht;
+    map<int, Point> ctl;
+    map<int, int> match;    // matched photo point and control point keys
+    int npht = tpht->data(&f, &pht);
+    int nctl = tctl->data(&ctl);
+
+    map<int, PhotoPoint>::const_iterator itp;
+    map<int, Point>::const_iterator itc;
+    int nmatch = 0;
+    for (itp = pht.begin(), itc = ctl.begin();
+         itp!= pht.end() && itc != ctl.end();
+         )
+    {
+        if (itp->first == itc->first)
+        {
+            match.insert(make_pair(itp->first, itc->first));
+            ++nmatch;
+            ++itc;
+            ++itp;
+        }
+        else if (itp->first > itc->first)
+        {
+            ++itc;
+        }
+        else
+        {
+            match.insert(make_pair(itp->first, -1));         // unmatched
+            ++itp;
+        }
+    }
+
+    double phtscale = 1e4; // Photo scale;
+    map<int, int>::const_iterator itm;
+    for (itm = match.begin(); itm != match.end(); ++itm)
+    {
+        if (itm->second != -1)
+        {
+            m_orient[0] += ctl[itm->second].x;
+            m_orient[1] += ctl[itm->second].y;
+            m_orient[2] += ctl[itm->second].z;
+        }
+    }
+    m_orient[0] /= nmatch;
+    m_orient[1] /= nmatch;
+    m_orient[2] = m_orient[2]/nmatch + phtscale*f;
+    m_orient[6] = m_orient[0];
+    m_orient[7] = m_orient[1];
+    m_orient[8] = m_orient[2];
+
+    for (itm = match.begin(); itm != match.end(); ++itm)
+    {
+        if (itm->second != -1)
+        {
+            m_result.insert(make_pair(itm->first, ctl[itm->second]));
+        }
+        else
+        {
+            Point p;
+            p.x = m_orient[0];
+            p.y = m_orient[1];
+            p.z = m_orient[2] - phtscale*f;
+            m_result.insert(make_pair(itm->first, p));
+        }
+    }
     
-    m_index = phtindex;
-    //memset(idx, 0, sizeof(int)*npht);
-    int i, j;
-    int nmatched = 0; // number of matched points
-    // the keys was guaranteed in increasing roder
-    int* idx = new int[npht];      // matched control point indexes. -1 for unknow points.
-    m_isctl = new int[npht];
-    memset(m_isctl, 0, sizeof(int)*npht);
-    for (i = 0; i < npht; idx[i++] = -1)
-        ;
-    for (i = 0, j = 0; i<npht && j<nctl; )
-    {
-        if (phtindex[i] == ctlindex[j])
-        {
-            m_isctl[i] = 1;
-            idx[i] = j;
-            ++nmatched;
-            ++i;
-            ++j;
-        }
-        else if (phtindex[i] > ctlindex[j])
-        {
-            ++j;
-        }
-        else
-        {
-            ++i;
-        }
-    }
-    int nunknown = npht - nmatched;   // number of unknow points
-
-    double* orient = m_orient;
-    m_result = new double[3*npht];
-    double* points = m_result;
-
-#if 0
-    double ip[3];  // initial values for unknown points
-    // use the first control points as the initial value of unkonwn points.
-    i = 0;
-    while( idx[i] == -1)
-    {
-        ++i;
-    }
-    ip[0] = ctl[idx[i]*3+1] * 1000;
-    ip[1] = ctl[idx[i]*3] * 1000;
-    ip[2] = ctl[idx[i]*3+2] * 1000;
-#endif
-
-    int si[2];
-    for (i = 0, j = 0; i<npht && j<2; ++i)
-    {
-        if (idx[i] != -1)
-            si[j++] = i;
-    }
-    double phtscale;
-    double scp[4];
-    scp[0] = ctl[idx[si[0]]*3+1] * 1000;
-    scp[1] = ctl[idx[si[0]]*3] * 1000;
-    scp[2] = ctl[idx[si[1]]*3+1] * 1000;
-    scp[3] = ctl[idx[si[1]]*3] * 1000;
-    double spp[4];
-    spp[0] = pht[si[0]*4];
-    spp[1] = pht[si[0]*4+1];
-    spp[2] = pht[si[1]*4];
-    spp[3] = pht[si[1]*4+1];
-    phtscale = sqrt((scp[0]-scp[2])*(scp[0]-scp[2]) + (scp[1]-scp[3])*(scp[1]-scp[3]))
-        / sqrt((spp[0]-spp[2])*(spp[0]-spp[2]) + (spp[1]-spp[3])*(spp[1]-spp[3]));
-
-    memset(orient, 0, sizeof(double)*12);
-    for (i = 0; i < npht; ++i)
-    {
-        if (idx[i] != -1)
-        {
-            orient[0] += ctl[idx[i]*3+1]*1000;
-            orient[1] += ctl[idx[i]*3]*1000;
-            orient[2] += ctl[idx[i]*3+2]*1000;
-        }
-    }
-    orient[0] /= nmatched;
-    orient[1] /= nmatched;
-    orient[2] = orient[2]/nmatched + phtscale*f;
-    memcpy(orient+6, orient, 6*sizeof(double));
-    // initialize points values
-    for (i = 0; i < npht; ++i)
-    {
-        if (idx[i] != -1)
-        {
-            points[i*3] = ctl[idx[i]*3+1] * 1000;
-            points[i*3+1] = ctl[idx[i]*3] * 1000;
-            points[i*3+2] = ctl[idx[i]*3+2] * 1000;
-        }
-        else
-        {
-            points[i*3] = m_orient[0];
-            points[i*3+1] = m_orient[1];
-            points[i*3+2] = m_orient[2] - phtscale*f;
-        }
-    }
-    qDebug() << "Onestep initial values";
-    for (i = 0; i < npht; ++i)
-    {
-        qDebug() << phtindex[i] << pht[i*4] << pht[i*4+1] << pht[i*4+2] << pht[i*4+3]
-                 << points[i*3] << points[i*3+1] << points[i*3+2];
-    }
-
-    int maxit = 1; // the lapack dgelsd routine gives a best answer, so one iteration is enough.
+    int maxit = 30; // the lapack dgelsd routine gives a best answer, so one iteration is enough.
     int itn = 0;
-    int nc = nunknown*3 + 12; // number of cloumns of matrix a
+    int nc = (npht-nmatch)*3 + 12; // number of cloumns of matrix a
     double* a = new double[4*npht*nc]; // matrix A and B
     double* l = new double[4*npht];              // matrix l
-    //double* s = new double[3*nunknown+12];
     double* x = new double[4*npht];
-    double s[24] = {0.0};
+    double* s = new double[nc];
+    ofstream of;
+    of.open("debug.txt");
     do
     {
         ++itn;
-        prepare(a, l, pht, points, orient, idx, f, npht, nmatched);
+        prepare(a, l, m_result, pht, f, match, nmatch);
+        for (int i = 0; i < npht*4; ++i)
+        {
+            for (int j = 0; j < nc; ++j)
+                of << a[i*nc+j] << ' ';
+            of << endl;
+        }
+        of << endl;
         memcpy(x, l, sizeof(double)*4*npht);
         lls(4*npht, nc, a, 1, x, s);
-        for (i = 0; i < 12; ++i)
-            orient[i] += x[i];
-        for (i = 0, j = 12; i < npht; ++i)
+        for (int i = 0; i < 12; ++i)
+            m_orient[i] += x[i];
+        int j;
+        for (itm = match.begin(), j = 12; 
+             itm != match.end(); 
+             ++itm)
         {
-            if (idx[i] == -1)
+            if (itm->second == -1)
             { 
-                points[i*3] += x[j];
-                points[i*3+1] += x[j+1];
-                points[i*3+2] += x[j+2];
+                m_result[itm->first].x += x[j];
+                m_result[itm->first].y += x[j+1];
+                m_result[itm->first].z += x[j+2];
                 j += 3;
             }
         }
-        qDebug() << "Points";
-        for (i = 0; i < npht; ++i)
-        {
-            qDebug() << points[i*3] << points[i*3+1] << points[i*3+2];
-        }
-    } while(!exact(l,nc) && itn<maxit);
-            
-    m_residual = new double[nc];
-    residual(&m_residual, a, x, l, 4*npht, nc);
-
-    qDebug() << "onestep itertations: " << itn;
-    qDebug() << "Orient Elements:";
-    qDebug() << "Left:" << m_orient[0] << m_orient[1] << m_orient[2] << m_orient[3] << m_orient[4] << m_orient[5];
-    qDebug() << "Right:" << m_orient[6] << m_orient[7] << m_orient[8] << m_orient[9] << m_orient[10] << m_orient[11]; 
-    qDebug() << "Onestep results: ";
-    for (i = 0; i < npht; ++i)
+    } while(!exact(x,nc) && itn<maxit);
+    m_numPoint = npht;
+    double* r = new double[nc];
+    residual(&r, a, x, l, 4*npht, nc);
+    for (int i = 0; i < 12; ++i)
+        m_orient_residual.push_back(r[i]);
+    int i;
+    for (itm = match.begin(), i = 12; itm != match.end(); ++itm)
     {
-        qDebug() << m_result[i*3+1] / 1000 << m_result[i*3] / 1000 << m_result[i*3+2] / 1000;
+        Point p;
+        if (itm->second == -1)
+        {
+            p.x = r[i++];
+            p.y = r[i++];
+            p.z = r[i++];
+        }
+        else
+        {
+            p.x = 0;
+            p.y = 0;
+            p.z = 0;
+        }
+        m_result_residual.insert(make_pair(itm->first, p));
     }
-    return true;
+
     delete []a;
     delete []l;
-    delete []idx;
-    delete []ctl;
-    delete []pht;
-    delete []ctlindex;
+    delete []x;
+    delete []s;
+    return true;
 }
 
-double Onestep::z_(double* orient, double* ctl)
-{
-    return a3(orient)*(ctl[0] - orient[0])
-        + b3(orient)*(ctl[1] - orient[1])
-        + c3(orient)*(ctl[2] - orient[2]);
-}
 
-// setup matrix a and matrix l.
-void Onestep::prepare(double* a, double* l, double* pht, double* ctl, double* o, int* idx, double f, int npht, int nmatched)
+void Onestep::prepare(double* a, double* l, map<int, Point>& ctl, 
+                           map<int, PhotoPoint>& pht, double f, 
+                           map<int, int>& match, int nmatch)
 {
-#define XL pht[4*i+0]
-#define YL pht[4*i+1] 
-#define XR pht[4*i+2]
-#define YR pht[4*i+3]
+    int nc = 12 + (pht.size()-nmatch)*3;
+    double Rl[9];
+    double Xsl, Ysl, Zsl, phil, omegal, kappal;
+    map<int, int>::const_iterator itm;
+    int i;    
+    Xsl = m_orient[0];
+    Ysl = m_orient[1];
+    Zsl = m_orient[2];
+    phil = m_orient[3];
+    omegal = m_orient[4];
+    kappal = m_orient[5];
+    transform(Rl, phil, omegal, kappal);
 
-    int nc = 12+(npht-nmatched)*3;
-    memset(a, 0, sizeof(double)*4*npht*nc);
-    double* lo = o;
-    double* ro = o+6; 
-    int iup = 0;
-    for (int i = 0; i < npht; ++i)
-    { 
-        // matrix A
+    double Rr[9];
+    double Xsr, Ysr, Zsr, phir, omegar, kappar;
+    Xsr = m_orient[6];
+    Ysr = m_orient[7];
+    Zsr = m_orient[8];
+    phir = m_orient[9];
+    omegar = m_orient[10];
+    kappar = m_orient[11];
+    transform(Rr, phir, omegar, kappar);
+    int iun = 0;
+    memset(a, 0, sizeof(double)*nc*pht.size()*4);
+    for (i = 0, itm = match.begin(); itm != match.end(); ++i, ++itm)
+    {
+        Point cp = ctl[itm->first];
+        PhotoPoint pp = pht[itm->first];
         // left
-        a[i*nc*4+0] = (a1(lo)*f + a3(lo)*XL) / z_(lo, ctl+3*i);
-        a[i*nc*4+1] = (b1(lo)*f + b3(lo)*XL) / z_(lo, ctl+3*i);
-        a[i*nc*4+2] = (c1(lo)*f + c3(lo)*XL) / z_(lo, ctl+3*i);
-        a[i*nc*4+3] = YL*sin(lo[4]) - (XL*(XL*cos(lo[5]) - YL*sin(lo[5]))/f
-                                       + f*cos(lo[5])
-                                      ) * cos(lo[4]);
-        a[i*nc*4+4] = -f*sin(lo[5]) - XL*(XL*sin(lo[5])+YL*cos(lo[5]))/f;
-        a[i*nc*4+5] = YL;
+        double xx = Rl[0]*(cp.x - Xsl) + Rl[3]*(cp.y - Ysl) + Rl[6]*(cp.z - Zsl);
+        double yy = Rl[1]*(cp.x - Xsl) + Rl[4]*(cp.y - Ysl) + Rl[7]*(cp.z - Zsl);
+        double zz = Rl[2]*(cp.x - Xsl) + Rl[5]*(cp.y - Ysl) + Rl[8]*(cp.z - Zsl);
+        l[i*4] = pp.x1 + f*xx/zz;
+        l[i*4+1] = pp.y1 + f*yy/zz;
 
-        a[i*nc*4+nc+0] = (a2(lo)*f + a3(lo)*YL) / z_(lo, ctl+3*i);
-        a[i*nc*4+nc+1] = (b2(lo)*f + b3(lo)*YL) / z_(lo, ctl+3*i);
-        a[i*nc*4+nc+2] = (c2(lo)*f + c3(lo)*YL) / z_(lo, ctl+3*i);
-        a[i*nc*4+nc+3] = -XL*sin(lo[4]) - (YL*(XL*cos(lo[5])-YL*sin(lo[5]))/f
-                                           -f*sin(lo[5])
-                                          )*cos(lo[4]);
-        a[i*nc*4+nc+4] = -f*cos(lo[5]) - YL*(XL*sin(lo[5])+YL*cos(lo[5]))/f;
-        a[i*nc*4+nc+5] = -XL;
+        a[i*4*nc] = (Rl[0]*f + Rl[2]*pp.x1) / zz;
+        a[i*4*nc+1] = (Rl[3]*f + Rl[5]*pp.x1) / zz;
+        a[i*4*nc+2] = (Rl[6]*f + Rl[8]*pp.x1) / zz;
+        a[i*4*nc+3] = pp.y1*sin(omegal) - (pp.x1/f*(pp.x1*cos(kappal) - pp.y1*sin(kappal)) + f*cos(kappal)) * cos(omegal);
+        a[i*4*nc+4] = -f*sin(kappal) - pp.x1/f*(pp.x1*sin(kappal) + pp.y1*cos(kappal));
+        a[i*4*nc+5] = pp.y1;
+        a[(i*4+1)*nc] = (Rl[1]*f + Rl[2]*pp.y1) / zz;
+        a[(i*4+1)*nc+1] = (Rl[4]*f + Rl[5]*pp.y1) / zz;
+        a[(i*4+1)*nc+2] = (Rl[7]*f + Rl[8]*pp.y1) / zz;
+        a[(i*4+1)*nc+3] = -pp.x1*sin(omegal) - (pp.y1/f*(pp.x1*cos(kappal)-pp.y1*sin(kappal)) - f*sin(kappal))*cos(omegal);
+        a[(i*4+1)*nc+4] = -f*cos(kappal) - pp.y1/f*(pp.x1*sin(kappal) + pp.y1*cos(kappal));
+        a[(i*4+1)*nc+5] = - pp.x1;
 
-        // right 
-        a[i*nc*4+nc*2+6] = (a1(ro)*f + a3(ro)*XR) / z_(ro, ctl+3*i);
-        a[i*nc*4+nc*2+7] = (b1(ro)*f + b3(ro)*XR) / z_(ro, ctl+3*i);
-        a[i*nc*4+nc*2+8] = (c1(ro)*f + c3(ro)*XR) / z_(ro, ctl+3*i);
-        a[i*nc*4+nc*2+9] = YR*sin(ro[4]) - (XR*(XR*cos(ro[5]) - YR*sin(ro[5]))/f
-                                       + f*cos(ro[5])
-                                      ) * cos(ro[4]);
-        a[i*nc*4+nc*2+10] = -f*sin(ro[5]) - XR*(XR*sin(ro[5])+YR*cos(ro[5]))/f;
-        a[i*nc*4+nc*2+11] = YR;
+        // right
+        xx = Rr[0]*(cp.x - Xsr) + Rr[3]*(cp.y - Ysr) + Rr[6]*(cp.z - Zsr);
+        yy = Rr[1]*(cp.x - Xsr) + Rr[4]*(cp.y - Ysr) + Rr[7]*(cp.z - Zsr);
+        zz = Rr[2]*(cp.x - Xsr) + Rr[5]*(cp.y - Ysr) + Rr[8]*(cp.z - Zsr);
+        l[i*4+2] = pp.x2 + f*xx/zz;
+        l[i*4+3] = pp.y2 + f*yy/zz;
 
-        a[i*nc*4+nc*3+6] = (a2(ro)*f + a3(ro)*YR) / z_(ro, ctl+3*i);
-        a[i*nc*4+nc*3+7] = (b2(ro)*f + b3(ro)*YR) / z_(ro, ctl+3*i);
-        a[i*nc*4+nc*3+8] = (c2(ro)*f + c3(ro)*YR) / z_(ro, ctl+3*i);
-        a[i*nc*4+nc*3+9] = -XR*sin(ro[4]) - (YR*(XR*cos(ro[5])-YR*sin(ro[5]))/f
-                                           -f*sin(ro[5])
-                                          )*cos(ro[4]);
-        a[i*nc*4+nc*3+10] = -f*cos(ro[5]) - YR*(XR*sin(ro[5])+YR*cos(ro[5]))/f;
-        a[i*nc*4+nc*3+11] = -XR;
+        a[(i*4+2)*nc+6] = (Rr[0]*f + Rr[2]*pp.x2) / zz;
+        a[(i*4+2)*nc+7] = (Rr[3]*f + Rr[5]*pp.x2) / zz ;
+        a[(i*4+2)*nc+8] = (Rr[6]*f + Rr[8]*pp.x2) / zz;
+        a[(i*4+2)*nc+9] = pp.y2*sin(omegar) - (pp.x2/f*(pp.x2*cos(kappar) - pp.y2*sin(kappar)) + f*cos(kappar)) * cos(omegar);
+        a[(i*4+2)*nc+10] = -f*sin(kappar) - pp.x2/f*(pp.x2*sin(kappar) + pp.y2*cos(kappar));
+        a[(i*4+2)*nc+11] = pp.y2;
+        a[(i*4+3)*nc+6] = (Rr[1]*f + Rr[2]*pp.y2) / zz;
+        a[(i*4+3)*nc+7] = (Rr[4]*f + Rr[5]*pp.y2) / zz;
+        a[(i*4+3)*nc+8] = (Rr[7]*f + Rr[8]*pp.y2) / zz;
+        a[(i*4+3)*nc+9] = -pp.x2*sin(omegar) - (pp.y2/f*(pp.x2*cos(kappar)-pp.y2*sin(kappar)) - f*sin(kappar))*cos(omegar);
+        a[(i*4+3)*nc+10] = -f*cos(kappar) - pp.y2/f*(pp.x2*sin(kappar) + pp.y2*cos(kappar));
+        a[(i*4+3)*nc+11] = - pp.x2;
 
-        // matrix B. also stroed in a
-        if (idx[i] == -1)       // unknown points
+        if (itm->second == -1)
         {
-            // left
-            a[i*nc*4+iup*3+12] = -a[i*nc*4+0]; // -a11
-            a[i*nc*4+iup*3+13] = -a[i*nc*4+1]; // -a12
-            a[i*nc*4+iup*3+14] = -a[i*nc*4+2]; // -a13
+            a[i*4*nc+12+iun*3] = -a[i*4*nc];
+            a[i*4*nc+12+iun*3+1] = -a[i*4*nc+1];
+            a[i*4*nc+12+iun*3+2] = -a[i*4*nc+2];
+            a[(i*4+1)*nc+12+iun*3] = -a[(i*4+1)*nc];
+            a[(i*4+1)*nc+12+iun*3+1] = -a[(i*4+1)*nc+1];
+            a[(i*4+1)*nc+12+iun*3+2] = -a[(i*4+1)*nc+2];
 
-            a[i*nc*4+nc+iup*3+12] = -a[i*nc*4+nc+0];   // -a21
-            a[i*nc*4+nc+iup*3+13] = -a[i*nc*4+nc+1]; // -a22
-            a[i*nc*4+nc+iup*3+14] = -a[i*nc*4+nc+2]; // -a23
-
-            // right
-            a[i*nc*4+nc*2+iup*3+12] = -a[i*nc*4+nc*2+6]; // -a11
-            a[i*nc*4+nc*2+iup*3+13] = -a[i*nc*4+nc*2+7]; // -a12
-            a[i*nc*4+nc*2+iup*3+14] = -a[i*nc*4+nc*2+8]; // -a13
-
-            a[i*nc*4+nc*3+iup*3+12] = -a[i*nc*4+nc*3+6];   // -a21
-            a[i*nc*4+nc*3+iup*3+13] = -a[i*nc*4+nc*3+7]; // -a22
-            a[i*nc*4+nc*3+iup*3+14] = -a[i*nc*4+nc*3+8]; // -a23    
-            ++iup;
+            a[(i*4+2)*nc+12+iun*3] = -a[(i*4+2)*nc+6];
+            a[(i*4+2)*nc+12+iun*3+1] = -a[(i*4+2)*nc+7];
+            a[(i*4+2)*nc+12+iun*3+2] = -a[(i*4+2)*nc+8];
+            a[(i*4+3)*nc+12+iun*3] = -a[(i*4+3)*nc+6];
+            a[(i*4+3)*nc+12+iun*3+1] = -a[(i*4+3)*nc+7];
+            a[(i*4+3)*nc+12+iun*3+2] = -a[(i*4+3)*nc+8];
+            ++iun;
         }
-
-        l[i*4] = XL + f * (a1(lo)*(ctl[3*i]-lo[0]) + 
-                           b1(lo)*(ctl[3*i+1]-lo[1]) + 
-                           c1(lo)*(ctl[3*i+2]-lo[2])
-                          ) / z_(o, ctl+3*i);
-        l[i*4+1] = YL + f * (a2(lo)*(ctl[3*i]-lo[0]) + 
-                             b2(lo)*(ctl[3*i+1]-lo[1]) + 
-                             c2(lo)*(ctl[3*i+2]-lo[2])
-                            ) / z_(lo, ctl+3*i);
-        l[i*4+2] = XR + f * (a1(ro)*(ctl[3*i]-ro[0]) + 
-                           b1(ro)*(ctl[3*i+1]-ro[1]) + 
-                           c1(ro)*(ctl[3*i+2]-ro[2])
-                          ) / z_(o, ctl+3*i);
-        l[i*4+3] = YR + f * (a2(ro)*(ctl[3*i]-ro[0]) + 
-                             b2(ro)*(ctl[3*i+1]-ro[1]) + 
-                             c2(ro)*(ctl[3*i+2]-ro[2])
-                            ) / z_(ro, ctl+3*i);
-   }
+    }
 }
-
 
 bool Onestep::exact(double* x, int n)
 {
-    double lenlim = 10; // length limits
+    double lenlim = 1; // length limits
     double anglim = 3e-5; // angle limits
     int i;
     for (i = 0; i < 3; ++i)

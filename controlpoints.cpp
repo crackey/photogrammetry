@@ -18,40 +18,26 @@ size_t ControlPoints::count() const
     return m_pointNum;
 }
 
-int ControlPoints::data(map<int, Point>* ctl, vector<int>* index) const
+int ControlPoints::data(map<int, Point>* ctl) const
 {
-    int np = 0;
-    if (index != 0)
+    if (ctl == 0)
+        return 0;
+    map<int, Point>::const_iterator itc;
+    int i;
+    for (i = 0, itc = m_points.begin(); 
+         i < m_pointNum && itc!=m_points.end();
+         ++i)
     {
-        map<int, Point>::const_iterator itc;
-        int i;
-        for(i = 0, itc = m_points.begin(); 
-            i < index->size() && itc!=m_points.end();
-            )
-        {
-            if (index->at(i) == itc->first)
-            {
-                Point tp;
-                tp.x = itc->second.y * 1000;
-                tp.y = itc->second.x * 1000;
-                tp.z = itc->second.z * 1000;
-                ctl->insert(make_pair(itc->first, tp));
-                ++itc;
-                ++i;
-            }
-            else if (index->at(i) < itc->first)
-                ++i;
-            else
-                ++itc;
-        }
+        Point p;
+        p.key = itc->second.key;
+        p.x = itc->second.y * 1000;
+        p.y = itc->second.x * 1000;
+        p.z = itc->second.z * 1000;
+        ctl->insert(make_pair(itc->first, p));
+        ++itc;
     }
-    else
-    {
-        map<int, Point> tctl(m_points.begin(), m_points.end());
-        ctl->swap(tctl);
-    }
-    np = ctl->size();
-    return np;
+
+    return m_pointNum;
 }
 
 int ControlPoints::data(double** xyzval, int** index) const
@@ -95,9 +81,8 @@ istream& operator>>(istream& is, ControlPoints& cp)
     is >> cp.m_pointNum;
     for (int i = 0; is && (i < cp.m_pointNum); ++i)
     {
-        int key;
-        is >> key >> p.x >> p.y >> p.z;
-        cp.m_points.insert(make_pair<int, Point>(key, p));
+        is >> p.key >> p.x >> p.y >> p.z;
+        cp.m_points.insert(make_pair(p.key, p));
     }
     return is;
 }

@@ -1,7 +1,12 @@
 #include <QtGui>
+#include <vector>
+#include <map>
 
 #include "intersection.h"
 #include "intersectionwidget.h"
+#include "globaldefn.h"
+
+using namespace std;
 
 #ifndef M_PI
 #define M_PI 3.1415926
@@ -32,8 +37,8 @@ void IntersectionWidget::updateBackward()
     }
     QTableWidget* orientTable = ui.orientTable;
     QTableWidgetItem* item = 0;
-    double* orient;
-    double* orient_residual;
+    vector<double> orient;
+    vector<double> orient_residual;
     m_intersection->orient(&orient, &orient_residual);
     for (int i = 0; i < 2; ++i)
     {
@@ -64,35 +69,34 @@ void IntersectionWidget::updateForward()
     }
     QTableWidget* forwardTable = ui.forwardTable;
     QTableWidgetItem* item = 0;
-    double *data = 0;
-    int *index = 0;
+    map<int, Point> result;
+    map<int, Point>::const_iterator itr;
     int np = 0;
-    np = m_intersection->forwardResult(&index, &data);
+    np = m_intersection->forwardResult(&result);
     forwardTable->setRowCount(np);
 
-    for (int i = 0; i < np; ++i)
+    int i;
+    for (i = 0, itr = result.begin(); itr != result.end(); ++itr, ++i)
     {
-            item = new QTableWidgetItem();
-            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-            item->setData(Qt::DisplayRole, QString("%1").arg(index[i]));
-            forwardTable->setItem(i, 0, item);
+        item = new QTableWidgetItem();
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        item->setData(Qt::DisplayRole, QString("%1").arg(itr->first));
+        forwardTable->setItem(i, 0, item);
+
+        item = new QTableWidgetItem();
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        item->setData(Qt::DisplayRole, QString("%1").arg(itr->second.y/1000.0, 0, 'f', 3));
+        forwardTable->setItem(i, 1, item);
+
+        item = new QTableWidgetItem();
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        item->setData(Qt::DisplayRole, QString("%1").arg(itr->second.x/1000.0, 0, 'f', 3));
+        forwardTable->setItem(i, 2, item);
+
+        item = new QTableWidgetItem();
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
+        item->setData(Qt::DisplayRole, QString("%1").arg(itr->second.z/1000.0, 0, 'f', 3));
+        forwardTable->setItem(i, 3, item);
     }
-        for (int j = 0; j < np; ++j)
-        {
-            item = new QTableWidgetItem();
-            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-            item->setData(Qt::DisplayRole, QString("%1").arg(data[3*j+1]/1000.0, 0, 'f', 3));
-            forwardTable->setItem(j, 1, item);
-
-            item = new QTableWidgetItem();
-            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-            item->setData(Qt::DisplayRole, QString("%1").arg(data[3*j]/1000.0, 0, 'f', 3));
-            forwardTable->setItem(j, 2, item);
-
-            item = new QTableWidgetItem();
-            item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable);
-            item->setData(Qt::DisplayRole, QString("%1").arg(data[3*j+2]/1000.0, 0, 'f', 3));
-            forwardTable->setItem(j, 3, item);
-        }
 }
 

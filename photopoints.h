@@ -27,7 +27,7 @@ public:
     double f() const;
     // get data, xyval and index would not be fetched if equals to 0 
     int data(int flag, double* focus, double** xyval = 0, int** index = 0) const;
-    int data(int flag, double* focus, vector<double>* pht = 0, vector<int>* index = 0) const;
+    int data(double* focus, map<int, PhotoPoint>* pht) const;
     //int data(double* focus, PhotoPoint** pdata) const;
                                                                   
 public slots:

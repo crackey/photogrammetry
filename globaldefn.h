@@ -4,14 +4,14 @@
 #include <QtDebug>
 
 struct Point {
-//    int key;
+    int key;
     double x;
     double y;
     double z;
 };
 
 struct PhotoPoint {
-//    int key;
+    int key;
     double x1;
     double y1;
     double x2;

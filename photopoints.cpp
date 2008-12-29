@@ -15,57 +15,28 @@ size_t PhotoPoints::count() const
     return m_pointNum;
 }
 
-int PhotoPoints::data(int flag, double* focus, vector<double>* pht, vector<int>* index) const
+int PhotoPoints::data(double* focus, map<int, PhotoPoint>* pht) const
 {
     int np = 0;        // number of points retrived.
     if (focus != 0)
         *focus = m_focus;
-    map<int, PhotoPoint>::const_iterator itp;
+
+    if (pht == 0)
+        return 0;
     int i;
-    if (pht != 0)  // retrive x,y values
+    np = m_points.size();
+    map<int, PhotoPoint>::const_iterator itp;
+    for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
     {
-        np = m_points.size();
-        switch (flag)
-        {
-        case Left:
-            pht->reserve(np*2);
-            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
-            {
-                pht->push_back(itp->second.x1 - 100);
-                pht->push_back(100 - itp->second.y1);
-            } 
-            break;
-        case Right:
-            pht->reserve(np*2);
-            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
-            {
-                pht->push_back(itp->second.x1-100 - itp->second.x2);
-                pht->push_back(100-itp->second.y1 + 10 - itp->second.y2);
-            } 
-            break;
-        case Left | Right:
-            pht->reserve(np*4);
-            for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
-            {
-                pht->push_back(itp->second.x1 - 100);
-                pht->push_back(100 - itp->second.y1);
-                pht->push_back(pht->at(i*4) - itp->second.x2);
-                pht->push_back(pht->at(i*4+1) + 10 - itp->second.y2);
-            } 
-            break;
-        default:
-            break;
-        }
-    }
-    if (index != 0)
-    {
-        np = m_points.size();
-        index->reserve(np);
-        for (itp = m_points.begin(), i = 0; itp != m_points.end(); ++itp, ++i)
-        {
-            index->push_back(itp->first);
-        }
-    }
+        PhotoPoint p;
+        p.key = itp->second.key;
+        p.x1 = itp->second.x1 - 100;
+        p.y1 = 100 - itp->second.y1;
+        p.x2 = p.x1 - itp->second.x2;
+        p.y2 = p.y1 + 10 - itp->second.y2;
+        pht->insert(make_pair(itp->first, p));
+    } 
+
     return np;
 }
 
@@ -201,16 +172,12 @@ ostream& operator<<(ostream& os, const PhotoPoints& pht)
 istream& operator>>(istream& is, PhotoPoints& pht)
 {
     is >> pht.m_pointNum >> pht.m_focus;
-    //    vector<Point> p;
-    //    p.push_back(*(new Point));
-    //    p.push_back(*(new Point));
 
     for (int i = 0; is && (i < pht.m_pointNum); ++i)
     {
         PhotoPoint p;
-        int key;
-        is >> key >> p.x1 >> p.y1 >> p.x2 >> p.y2;
-        pht.m_points.insert(make_pair(key, p));
+        is >> p.key >> p.x1 >> p.y1 >> p.x2 >> p.y2;
+        pht.m_points.insert(make_pair(p.key, p));
     }
     return is;
 }

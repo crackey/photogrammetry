@@ -2,6 +2,11 @@
 #define INTERSECTION_H
 
 #include <QObject>
+#include <map>
+
+#include "globaldefn.h"
+
+using namespace std;
 
 class PhotoPoints;
 class ControlPoints;
@@ -18,23 +23,20 @@ public:
     void setRightPhoto(double* pd);
     bool forward();
     bool backward();
-    int forwardResult(int** index, double** result);
-    int orient(double** o, double** os);
+    int forwardResult(map<int, Point>* result);
+    int orient(vector<double>* o, vector<double>* os);
 
 private:
-    double z_(double* orient, double* ctl, int index);
-    void ma(double* a, double* ctl, double* pht, double f, double* orient, int index);
+    //double z_(double* orient, double* ctl, int index);
+    void backPrepare(double* a, double* l, map<int, Point>& ctl, 
+                 map<int, PhotoPoint>& pht, double f, 
+                 vector<int>& match, int side);
     bool orientNotExact(double* orient);
-    int backward_impl(double* pht, double* ctl, double* orient, double f, int n, int side);
-    int forward_impl(double f, double* p , double* o, double* out, int n);
-    int backwardData(double** ppht, double** pctl, double* focus, int side);
 
-    double m_orient[12]; // orient elements, 0-5 for left photo, 6-11 for right
-	double m_orients[12]; // residual
-//    double m_ro[6]; // orient elements of right photo
+    vector<double> m_orient; // orient elements, 0-5 for left photo, 6-11 for right
+	vector<double> m_orients; // residual
     QString m_pht;
-    double* m_forwardResult;
-    int *m_index;
+    map<int, Point> m_forwardResult;
     int m_numPhtPt;
     QString m_ctl;
 };

@@ -14,38 +14,44 @@ Orientation::Orientation(QString ctl, QString pht, QObject* parent)
 
     m_ctl = ctl;
     m_pht = pht;
-    m_modelpoints = 0;
-    m_index = 0;
     m_limit = 3e-5;
-    m_result = 0;
-    memset(m_rols, 0, sizeof(double)*5);
-    memset(m_rol, 0, sizeof(double)*5); 
-    memset(m_aols, 0, sizeof(double)*7);
-    memset(m_aol, 0, sizeof(double)*7); 
-    memset(m_orient, 0, sizeof(double)*12);
+    int i;
+    for (i = 0; i < 5; ++i)
+    {
+        m_rols.push_back(0);
+        m_rol.push_back(0);
+    }
+    for (i = 0; i < 7; ++i)
+    {
+        m_aol.push_back(0);
+        m_aols.push_back(0);
+    }
+    for (i = 0; i < 12; ++i)
+    {
+        m_orient.push_back(0);
+    }
 }
 
 Orientation::~Orientation()
 {}
 
-int Orientation::result(int** index, double** data) const
+int Orientation::result(map<int, Point>* point) const
 {
-    *index = m_index;
-    *data = m_result;
+    *point = m_result;
     return m_phtnum;
 }
 
-int Orientation::relativeOrientElements(double** data, double** s) const
+int Orientation::relativeOrientElements(vector<double>* o, vector<double>* s) const
 {
-    *s = (double*)m_rols;
-    *data = (double*)m_rol;
+    *s = m_rols;
+    *o = m_rol;
     return 5;
 }
 
-int Orientation::absoluteOrientElements(double** data, double** s) const
+int Orientation::absoluteOrientElements(vector<double>* o, vector<double>* s) const
 {
-    *s = (double*)m_aols;
-    *data = (double*)m_aol;
+    *s = m_aols;
+    *o= m_aol;
     return 7;
 }
 
@@ -61,47 +67,42 @@ bool Orientation::exact(double* data)
 
 bool Orientation::relative()
 {
-    double *data = 0;
-    double f;
-    int np;
     PHGProject* prj = (PHGProject*)parent();
     PhotoPoints* tpht = prj->photoPoints(m_pht);
-    np = tpht->data(PhotoPoints::Left | PhotoPoints::Right, &f, &data);
-//    np = photoData(&data, &f);
-    qDebug() << "relative orientation data";
-    qDebug() << "focus:" << f;
-    for (int i = 0; i < np; ++i)
-        qDebug() << data[i*4] << data[i*4+1] << data[i*4+2] << data[i*4+3];
-
+    double f;    // focus
+    map<int, PhotoPoint> pht;
+    int np = tpht->data(&f, &pht);
     double* a = new double[np*5];
     double* l = new double[np];
-	double* ll = new double[np];
-    double* o = m_orient;
+	double* x = new double[np];
+    double* rols = new double[5];
+    map<int, PhotoPoint>::const_iterator itp;
     int maxit = 30;
     int itn = 0;
-    memset(m_rol, 0, sizeof(double)*5);
-    double bx = data[0] - data[2]; // bx = (x1-x2)1 ?? what's
+    itp = pht.begin();
+    double bx = itp->second.x1 - itp->second.x2; // bx = (x1-x2)1 ?? what's
     qDebug() << "bx:" << bx;
     double by; 
     double bz;
     double R1[9];
     double R2[9];
-    transform(R1, m_orient);
-//    np = 6;// for testing, should be deleted
+    transform(R1, m_orient[3], m_orient[4], m_orient[5]);
+
     double N1, N2, Q, left[3], tleft[3], right[3], tright[3];
     do
     {
         ++itn;
-        for (int i = 0; i < np; ++i)
+        int i;
+        for (itp = pht.begin(), i = 0; itp != pht.end(); ++itp, ++i)
         {
-            transform(R2, m_orient+6);
+            transform(R2, m_orient[9], m_orient[10], m_orient[11]);
             by = bx*m_rol[0];
             bz = bx*m_rol[1];
-            right[0] = data[4*i+2];
-            right[1] = data[4*i+3];
+            right[0] = itp->second.x2;
+            right[1] = itp->second.y2;
             right[2] = -f;
-            left[0] = data[4*i];
-            left[1] = data[4*i+1];
+            left[0] = itp->second.x1;
+            left[1] = itp->second.y1;
             left[2] = -f;
             matrixMultiply(R1, left, tleft, 3, 3, 1);
             matrixMultiply(R2, right, tright, 3, 3, 1);
@@ -123,122 +124,107 @@ bool Orientation::relative()
             a[5*i+4] = X2 * N2;
             l[i] = Q;
         }
-		memcpy(ll, l, sizeof(double)*np);
-        lls(np, 5, a, 1, l, m_rols);
+		memcpy(x, l, sizeof(double)*np);
+        lls(np, 5, a, 1, x, rols);
 
         for (int i = 0; i < 5; ++i)
         {
-            m_rol[i] += l[i];
+            m_rol[i] += x[i];
         }
         for (int i = 2; i < 5; ++i)
         {
-            o[7+i] += l[i];
+            m_orient[7+i] += x[i];
         }
     } while (!exact(l) && (itn < maxit));
-    double* r = m_rols;
-    residual(&r, a, l, ll, np, 5);
-    qDebug() << "Relative Orientation, number of iterations:" << itn;
-    for (int i = 6; i < 12; ++i)
-        qDebug() << m_orient[i];
-    qDebug() << "relative orienments:";
+    residual(&rols, a, x, l, np, 5);
     for (int i = 0; i < 5; ++i)
-        qDebug() << m_rol[i];
+        m_rols[i] = rols[i];
 
     // calculate model points.
-    m_modelpoints = new double[np*3];
-    double* mp = m_modelpoints;
-    transform(R1, m_orient);
-    transform(R2, m_orient+6);
+    transform(R1, m_orient[3], m_orient[4], m_orient[5]);
+    transform(R2, m_orient[9], m_orient[10], m_orient[11]);
     by = bx*m_rol[0];
     bz = bx*m_rol[1];
-    for (int i = 0; i < np; ++i)
+    int i;
+    for (itp = pht.begin(), i = 0; itp != pht.end(); ++itp, ++i)
     {
         double m = 10000;
-        right[0] = data[4*i+2];
-        right[1] = data[4*i+3];
+        right[0] = itp->second.x2;
+        right[1] = itp->second.y2;
         right[2] = -f;
-        left[0] = data[4*i];
-        left[1] = data[4*i+1];
+        left[0] = itp->second.x1;
+        left[1] = itp->second.y1;
         left[2] = -f;
         matrixMultiply(R1, left, tleft, 3, 3, 1);
         matrixMultiply(R2, right, tright, 3, 3, 1);
         N1 = (bx*Z2 - bz*X2) / (X1*Z2 - X2*Z1);
         N2 = (bx*Z1 - bz*X1) / (X1*Z2 - X2*Z1);
-        mp[i*3] = m * N1 * X1;
-        mp[i*3+1] = m * 0.5*(N1*Y1+N2*Y2+by);
-        mp[i*3+2] = m * f + m*N1*Z1;
+        Point p;
+        p.x = m * N1 * X1;
+        p.y = m * 0.5*(N1*Y1+N2*Y2+by);
+        p.z = m * f + m*N1*Z1;
+        m_modelpoints.insert(make_pair(itp->first, p));
     }
-    
-    qDebug() << "model points";
-    for (int i = 0; i < np; ++i)
-        qDebug() << mp[i*3] << mp[i*3+1] << mp[i*3+2];
 
     delete []a;
     delete []l;
-    delete []data;
+    delete []x;
+    delete []rols;
     return true;
 }
 
 bool Orientation::absolute()
 {
-    int np;
     PHGProject* prj = (PHGProject*)parent();
-    PhotoPoints* tpht = prj->photoPoints(m_pht);
-    int* phtindex = 0;
-    np = tpht->data(0, 0 , 0, &phtindex);
-    m_phtnum = np;
-    m_index = phtindex;
     ControlPoints* tctl = prj->controlPoints(m_ctl);
-    double* ctldata = 0;
-    int* ctlindex = 0;
-    int nm;
-    int nc = tctl->data(&ctldata, &ctlindex);
-    nm = min(np, nc);
-    int* ctlidx = new int[nm];
-    int* modelidx = new int[nm];
-    int i, j;
-    nm = 0;
-    for (i = 0, j = 0; i<np && j<nc; )
+    map<int, Point> ctl;
+    int nctl = tctl->data(&ctl);
+    map<int, Point>::const_iterator itc;
+    map<int, Point>::const_iterator itm;
+    vector<int> match;    // matched photo point and control point keys
+    for (itm = m_modelpoints.begin(), itc = ctl.begin();
+         itm!= m_modelpoints.end() && itc != ctl.end();
+         )
     {
-        if (phtindex[i] == ctlindex[j])
+        if (itm->first == itc->first)
         {
-            ctlidx[nm] = j;
-            modelidx[nm] = i;
-            ++nm;
-            ++i;
-            ++j;
+            match.push_back(itm->first);
+            ++itc;
+            ++itm;
         }
-        else if (phtindex[i] > ctlindex[j])
-            ++j;
+        else if (itm->first > itc->first)
+            ++itc;
         else
-            ++i;
+            ++itm;
     }
-    memset(m_aol, 0, sizeof(double)*7);
+
+    int nm = match.size();
     m_aol[3] = 1;
     double* a = new double[7*3*nm];
     memset(a, 0, sizeof(double)*21*nm);
     double* l = new double[3*nm];
-    double* ll = new double[3*nm];
+    double* x = new double[3*nm];
     double s[7];
     double R[9];
     int maxit = 30;
     int itn = 0;
+    int i;
     do
     {
         ++itn;
-        transform(R, m_aol+1);
+        transform(R, m_aol[4], m_aol[5], m_aol[6]);
         for (i = 0; i < nm; ++i)
         {
             double pp[3]; // Xp, Yp, Zp
-            pp[0] = m_modelpoints[modelidx[i]*3];
-            pp[1] = m_modelpoints[modelidx[i]*3+1];
-            pp[2] = m_modelpoints[modelidx[i]*3+2];
+            pp[0] = m_modelpoints[match[i]].x;
+            pp[1] = m_modelpoints[match[i]].y;
+            pp[2] = m_modelpoints[match[i]].z;
             double p[3]; // R0*[Xp,Yp,Zp]T
             matrixMultiply(R, pp, p, 3, 3, 1);
             double tp[3];  // Xtp, Ytp, Ztp
-            tp[0] = ctldata[ctlidx[i]*3+1]*1000;
-            tp[1] = ctldata[ctlidx[i]*3]*1000;
-            tp[2] = ctldata[ctlidx[i]*3+2]*1000;
+            tp[0] = ctl[match[i]].x;
+            tp[1] = ctl[match[i]].y;
+            tp[2] = ctl[match[i]].z;
             l[3*i] = tp[0] - p[0]*m_aol[3] - m_aol[0];
             l[3*i+1] = tp[1] - p[1]*m_aol[3] - m_aol[1];
             l[3*i+2] = tp[2] - p[2]*m_aol[3] - m_aol[2];
@@ -255,39 +241,38 @@ bool Orientation::absolute()
             a[i*21+18] = pp[0];
             a[i*21+19] = pp[1];
         }
-        memcpy(ll, l, sizeof(double)*3*nm);
-        lls(3*nm, 7, a, 1, l, s);
+        memcpy(x, l, sizeof(double)*3*nm);
+        lls(3*nm, 7, a, 1, x, s);
         for (i = 0; i < 7; ++i)
         {
-            m_aol[i] += l[i];
+            m_aol[i] += x[i];
         }
     } while(itn < maxit && !exact(l));
-    double* r = m_aols;
-    residual(&r, a, l, ll, 3*nm, 7);
-    qDebug() << "Absolute orientation iterations: " << itn;
+    double* r = new double[7];
+    residual(&r, a, x, l, 3*nm, 7);
+    for (i = 0; i < 7; ++i)
+        m_aols[i] = r[i];
 
-    m_result = new double[3*np];
-    for (i = 0; i < np; ++i)
+    for (itm = m_modelpoints.begin(); itm != m_modelpoints.end(); ++itm)
     {
-        transform(R, m_aol+1);
+        transform(R, m_aol[4], m_aol[5], m_aol[6]);
         double pp[3];
-        pp[0] = m_modelpoints[i*3];
-        pp[1] = m_modelpoints[i*3+1];
-        pp[2] = m_modelpoints[i*3+2];
+        pp[0] = itm->second.x;
+        pp[1] = itm->second.y;
+        pp[2] = itm->second.z;
         double p[3]; // R0*[Xp,Yp,Zp]T
         matrixMultiply(R, pp, p, 3, 3, 1);
-        m_result[i*3] = m_aol[3]*p[0]+m_aol[0];
-        m_result[i*3+1] = m_aol[3]*p[1]+m_aol[1];
-        m_result[i*3+2] = m_aol[3]*p[2]+m_aol[2];
-        qDebug() << m_result[i*3+1]/1000 << m_result[i*3]/1000 << m_result[i*3+2]/1000;
+        Point resultp;
+        resultp.x = m_aol[3]*p[0]+m_aol[0];
+        resultp.y = m_aol[3]*p[1]+m_aol[1];
+        resultp.z = m_aol[3]*p[2]+m_aol[2];
+        m_result.insert(make_pair(itm->first, resultp));
     }
+    m_phtnum = m_modelpoints.size();
     delete []a;
     delete []l;
    // delete []phtindex;
-    delete []ctlindex;
-    delete []ctldata;
-    delete []ctlidx;
-    delete []modelidx;
+    delete []x;
+    delete []r;
     return true;
 }
-

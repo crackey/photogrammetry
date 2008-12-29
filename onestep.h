@@ -1,7 +1,14 @@
 #ifndef ONESTEP_H
 #define ONESTEP_H
 
+#include <map>
+#include <vector>
+#include <vector>
 #include <QObject>
+
+#include "globaldefn.h"
+
+using namespace std;
 
 class QString;
 
@@ -13,20 +20,19 @@ public:
     ~Onestep();
 
     bool calculate();
-    int orient(double** o, double** os);
-    int result(int** index, int** isctl, double** r, double** rs);
+    int orient(vector<double>* o, vector<double>* os);
+    int result(map<int, Point>* result, map<int, Point>* residual);
 
 private:
     bool exact(double* x, int n);
-    double z_(double* orient, double* ctl);
-    void prepare(double* a, double*l, double* pht, double* ctl, double* o, int* idx, 
-            double f, int npht, int nmatched);
-    double* m_result;   
-    double m_orient[12];
-    double* m_residual;
-    int* m_index;
-    int* m_isctl;
-    int m_pnum;
+    void prepare(double* a, double* l, map<int, Point>& ctl, 
+                 map<int, PhotoPoint>& pht, double f, 
+                 map<int, int>& match, int nmatch);
+    map<int, Point> m_result;
+    map<int, Point> m_result_residual;
+    vector<double> m_orient;
+    vector<double> m_orient_residual;
+    int m_numPoint;
     QString m_ctl;
     QString m_pht;
 };
