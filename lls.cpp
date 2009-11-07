@@ -1,11 +1,16 @@
+#include "lls.h"
+
 #include <cmath>
 #include <cstring>
+#include <limits>
 
-#include "lapack/dgesv.h"
-#include "lapack/dgelsd.h"
-#include "clapack.h"
-#include "blas/dgemm.h"
-#include "lls.h"
+// #include "lapack/dgesv.h"
+// #include "lapack/dgelsd.h"
+// #include "clapack.h"
+// #include "blas/dgemm.h"
+
+#define max(A, B) ((A)>(B) ? (A) : (B))
+#define min(A, B) ((A)>(B) ? (B) : (A)) 
 
 using namespace std;
 

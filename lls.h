@@ -2,6 +2,8 @@
 #define LLS_H
 
 #include "f2c.h"
+#include "lapack.h"
+#include "blas.h"
 
 extern integer lls(integer m, integer n, doublereal* a, integer nrhs, doublereal* b, doublereal* s);
 extern void matrixMultiply(doublereal* a, doublereal* b, doublereal* c, integer m, integer k, integer n);

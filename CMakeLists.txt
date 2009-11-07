@@ -6,6 +6,11 @@ FIND_PACKAGE(Qt4 REQUIRED)
 include(UseQt4)
 ADD_DEFINITIONS( ${QT_DEFINITIONS} )
 
+enable_language(Fortran)
+#SET(BLA_STATIC TRUE)
+FIND_PACKAGE(BLAS REQUIRED)
+FIND_PACKAGE(LAPACK REQUIRED)
+
 set(QTMOC_SRCS 
     photogrammetry.h
     phgproject.h
@@ -36,7 +41,6 @@ SET(QT_USE_QTMAIN 1)
 INCLUDE_DIRECTORIES(
     ${CMAKE_CURRENT_SOURCE_DIR} 
     ${CMAKE_CURRENT_BINARY_DIR}
-    "d:/dev/include"
     )
 INCLUDE(
     ${QT_USE_FILE}
@@ -86,12 +90,14 @@ SET(SRCS
     ${QT_UIC_HEADERS}
     )
 
+
+# lapack libraries
+SET(LIBS ${QT_LIBRARIES} ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+
 # use WIN32 cause /SUBSYSTEM:WINDOWS, or a console built
-ADD_EXECUTABLE(photogrammetry WIN32
+ADD_EXECUTABLE(photogrammetry
     ${SRCS}
     )
 
-# lapack libraries
-SET(LIBRARYS blas_win32 lapack_win32)
 
-TARGET_LINK_LIBRARIES(photogrammetry ${QT_LIBRARIES} ${LIBRARYS})
+TARGET_LINK_LIBRARIES(photogrammetry lapack ${LIBS})

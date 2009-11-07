@@ -5,3 +5,5 @@ Debug
 *.swp
 tags
 make
+build
+cscope.*
