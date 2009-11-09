@@ -57,9 +57,9 @@ Photogrammetry::~Photogrammetry()
 void Photogrammetry::on_fileOpenAction_triggered()
 {
     QString filepath;
-    filepath = QFileDialog::getOpenFileName(this, tr("´ò¿ª"), ".", 
-        tr("¿ØÖÆµãÊı¾İ (*.ctl);;"
-           "ÏàÆ¬Êı¾İ (*.pht);;"));
+    filepath = QFileDialog::getOpenFileName(this, tr("æ‰“å¼€"), ".", 
+        tr("æ§åˆ¶ç‚¹æ•°æ® (*.ctl);;"
+           "ç›¸ç‰‡æ•°æ® (*.pht);;"));
     if (!filepath.isEmpty())
         emit fileopen(filepath);
 }
@@ -103,9 +103,9 @@ void Photogrammetry::on_onestepAction_triggered()
 void Photogrammetry::on_helpAboutAction_triggered()
 {
     QMessageBox msgBox;
-    msgBox.setText(tr("Êı×ÖÉãÓ°²âÁ¿Ñ§×÷Òµ\n"
-                      "\n×÷Õß£ºÑî²¨(oakyangnjucn@gmail.com)\n"
-                      "\n°æÈ¨£ºThis software is in the public domain, "
+    msgBox.setText(tr("æ•°å­—æ‘„å½±æµ‹é‡å­¦ä½œä¸š\n"
+                      "\nä½œè€…ï¼šæ¨æ³¢(oakyangnjucn@gmail.com)\n"
+                      "\nç‰ˆæƒï¼šThis software is in the public domain, "
                       "\ndo with it what you wish."
                       "\nContact the auther to get the source if you want."));
     msgBox.exec(); 
@@ -152,7 +152,7 @@ void Photogrammetry::updateBackwardView(bool t)
     {
         QTabWidget* tab = ui.tabWidget;
         QString tabLabel;
-        tabLabel = tr("½»»á");
+        tabLabel = tr("äº¤ä¼š");
         IntersectionWidget* intsWidget = 0;
         for (int i = 0; i < tab->count(); ++i)
         {
@@ -179,7 +179,7 @@ void Photogrammetry::updateForwardView(bool t)
     {
         QTabWidget* tab = ui.tabWidget;
         QString tabLabel;
-        tabLabel = tr("½»»á");
+        tabLabel = tr("äº¤ä¼š");
         IntersectionWidget* intsWidget = 0;
         for (int i = 0; i < tab->count(); ++i)
         {
@@ -203,7 +203,7 @@ void Photogrammetry::updateRelativeView(bool t)
     {
         QTabWidget* tab = ui.tabWidget;
         QString tabLabel;
-        tabLabel = tr("¶¨Ïò");
+        tabLabel = tr("å®šå‘");
         OrientationWidget* ortWidget = 0;
         for (int i = 0; i < tab->count(); ++i)
         {
@@ -230,7 +230,7 @@ void Photogrammetry::updateAbsoluteView(bool t)
     {
         QTabWidget* tab = ui.tabWidget;
         QString tabLabel;
-        tabLabel = tr("¶¨Ïò");
+        tabLabel = tr("å®šå‘");
         OrientationWidget* ortWidget = 0;
         for (int i = 0; i < tab->count(); ++i)
         {
@@ -254,7 +254,7 @@ void Photogrammetry::updateOnestepView(bool t)
     {
         QTabWidget* tab = ui.tabWidget;
         QString tabLabel;
-        tabLabel = tr("Ò»²½·¨");
+        tabLabel = tr("ä¸€æ­¥æ³•");
         OnestepWidget* ostWidget = 0;
         for (int i = 0; i < tab->count(); ++i)
         {

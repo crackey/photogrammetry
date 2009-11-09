@@ -9,26 +9,30 @@
 // #include "clapack.h"
 // #include "blas/dgemm.h"
 
+#ifndef max
 #define max(A, B) ((A)>(B) ? (A) : (B))
+#endif
+#ifndef min
 #define min(A, B) ((A)>(B) ? (B) : (A)) 
+#endif
 
 using namespace std;
 
-integer lls(integer m, integer n, doublereal* aa, integer nrhs, doublereal* b, doublereal* s)
+int lls(int m, int n, double* aa, int nrhs, double* b, double* s)
 {
-    integer mmax = m, nmax = n;
-    integer nlvl;
+    int mmax = m, nmax = n;
+    int nlvl;
     nlvl = max(0, int(log(min(m, n)/26.0)+1));
-    integer lda = mmax, liwork=3*mmax*nlvl+11*mmax, lwork;
-    integer maxmn = max(m, n);
+    int lda = mmax, liwork=3*mmax*nlvl+11*mmax, lwork;
+    int maxmn = max(m, n);
     lwork=(12*maxmn+50*maxmn+8*maxmn*nlvl+maxmn*nrhs+26*26)*2;
     liwork *= 2;
     lwork *= 2;
-    doublereal rcond;
-    integer info, rank;
-    doublereal* a = new doublereal[lda*nmax];
-    doublereal* work = new doublereal[lwork];
-    integer* iwork = new integer[liwork];
+    double rcond;
+    int info, rank;
+    double* a = new double[lda*nmax];
+    double* work = new double[lwork];
+    int* iwork = new int[liwork];
     for (int i = 0; i < m; ++i)
         for (int j = 0; j < n; ++j)
             a[i+lda*j] = aa[n*i+j];
@@ -41,50 +45,53 @@ integer lls(integer m, integer n, doublereal* aa, integer nrhs, doublereal* b, d
     return 0;
 }
 
-void matrixMultiply(double* a, double* b, double* c, integer m, integer k, integer n)
+void matrixMultiply(double* a, double* b, double* c, int m, int k, int n)
 {
     char transa='t';
     char transb = 'n';
-    integer mm = m, kk = k, nn = n;
-    doublereal alpha = 1.0, beta = 0;
+    int mm = m, kk = k, nn = n;
+    double alpha = 1.0, beta = 0;
  //   DGEMM(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
-    dgemm_(&transa, &transb, &mm, &nn, 
-        &kk, &alpha, a,
-        &kk, b, &kk,
-        &beta, c, &mm);    
+    dgemm(transa, transb, mm, nn, 
+        kk, alpha, a,
+        kk, b, kk,
+        beta, c, mm);    
 }
 
-void matrixATA(doublereal* a, doublereal* c, integer m, integer n)
+//void dgemm(char, char, int, int, int, double, double*, int, double*, int, double, double*, int)’
+
+
+void matrixATA(double* a, double* c, int m, int n)
 {
-	doublereal* b = new doublereal[m*n];
-	memcpy(b, a, sizeof(doublereal)*m*n);
+	double* b = new double[m*n];
+	memcpy(b, a, sizeof(double)*m*n);
     char transa='n';
     char transb = 't';
-    integer mm = n, kk = m, nn = n;
-    doublereal alpha = 1.0, beta = 0;
+    int mm = n, kk = m, nn = n;
+    double alpha = 1.0, beta = 0;
  //   DGEMM(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
-    dgemm_(&transa, &transb, &mm, &nn, 
-        &kk, &alpha, b,
-        &mm, b, &nn,
-        &beta, c, &mm); 
+    dgemm(transa, transb, mm, nn, 
+        kk, alpha, b,
+        mm, b, nn,
+        beta, c, mm); 
     delete []b;
 }
 
-void matrixInverse(doublereal* a, integer m)
+void matrixInverse(double* a, int m)
 {
-    integer n = m;
-	doublereal* aa = new doublereal[m*n];
-	memcpy(aa, a, sizeof(doublereal)*m*n);
+    int n = m;
+	double* aa = new double[m*n];
+	memcpy(aa, a, sizeof(double)*m*n);
     for (int i = 0; i < m; ++i)
         for (int j = 0; j < n; ++j)
             a[i+m*j] = aa[n*i+j];
 
-    integer* ipiv = new integer[m];
-	integer iwork = m*n;
-	doublereal* work = new doublereal[iwork];
-	integer info;
+    int* ipiv = new int[m];
+	int iwork = m*n;
+	double* work = new double[iwork];
+	int info;
 	dgetrf_(&m, &n, a, &m, ipiv, &info);
 	dgetri_(&m, a, &n, ipiv, work, &iwork, &info);
 
@@ -125,7 +132,7 @@ void residual(double** r, double* a, double* x, double* l, int n, int m)
     delete []Q;
 }
 
-void solve(double** x, double* a, double* l, integer m, integer n)
+void solve(double** x, double* a, double* l, int m, int n)
 {
     double* ATA = new double[n*n];
     matrixATA(a, ATA, m, n);

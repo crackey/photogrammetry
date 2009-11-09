@@ -1,15 +1,17 @@
 #ifndef LLS_H
 #define LLS_H
 
-#include "f2c.h"
-#include "lapack.h"
-#include "blas.h"
+//#include "la.h"
+//#include "lapack.h"
+//#include "blas.h"
+#include "/usr/gfortran64/include/acml.h"
+#include "/usr/gfortran64/include/acml_mv.h"
 
-extern integer lls(integer m, integer n, doublereal* a, integer nrhs, doublereal* b, doublereal* s);
-extern void matrixMultiply(doublereal* a, doublereal* b, doublereal* c, integer m, integer k, integer n);
-extern void matrixInverse(doublereal* a, integer m);
-extern void matrixATA(doublereal* a, doublereal* c, integer m, integer n);
+extern int lls(int m, int n, double* a, int nrhs, double* b, double* s);
+extern void matrixMultiply(double* a, double* b, double* c, int m, int k, int n);
+extern void matrixInverse(double* a, int m);
+extern void matrixATA(double* a, double* c, int m, int n);
 extern void residual(double** r, double* a, double* x, double* l, int n, int m);
-extern void solve(double** x, double* a, double* l, integer m, integer n);
+extern void solve(double** x, double* a, double* l, int m, int n);
 
 #endif
